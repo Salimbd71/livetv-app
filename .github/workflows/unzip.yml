@@ -11,21 +11,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: List files
+        run: ls -la
 
       - name: Extract ZIP
         run: |
-          unzip app.zip -d extracted
+          for file in *.zip; do
+            echo "Found $file"
+            unzip "$file" -d extracted
+          done
 
-      - name: Copy Files
+      - name: Copy files
         run: |
           cp -r extracted/. .
 
-      - name: Commit Changes
+      - name: Commit
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add .
-          git commit -m "Extract ZIP" || echo "No changes"
+          git commit -m "extract zip" || echo "no changes"
           git push
