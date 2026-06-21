@@ -72,3 +72,4 @@ const ChannelCard = ({ name, logo, category, isActive, isFavorite, onClick, onTo
     </div>
   </button>
 );
+export default ChannelCard;
