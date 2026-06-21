@@ -17,9 +17,13 @@ jobs:
         run: |
           unzip app.zip -d extracted
 
-      - name: Copy files (exclude git)
+      - name: Copy files safely
         run: |
-          rsync -av --exclude='.git' extracted/ ./
+          rsync -av \
+          --exclude='.git' \
+          --exclude='.workspace' \
+          --exclude='node_modules' \
+          extracted/ ./
 
       - name: Commit changes
         run: |
