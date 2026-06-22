@@ -16,7 +16,6 @@ interface Channel {
 }
 
 const channels: Channel[] = channelsData;
-
 const FAVORITES_KEY = "livetv_favorites";
 
 const loadFavorites = (): Set<string> => {
@@ -70,6 +69,11 @@ const Index = () => {
     return result;
   }, [activeCategory, searchQuery, favorites]);
 
+  // Featured/Random Channels (ডান পাশের সাইডবারের জন্য ফিক্সড ৩-৪টি চ্যানেল)
+  const featuredChannels = useMemo(() => {
+    return channels.slice(0, 4); // এখানে আপনার ইচ্ছামতো র‍্যান্ডমাইজ বা স্লাইস করতে পারেন
+  }, []);
+
   const idx = selectedChannel ? filtered.findIndex((c) => c.url === selectedChannel.url) : -1;
   const hasPrev = idx > 0;
   const hasNext = idx >= 0 && idx < filtered.length - 1;
@@ -110,14 +114,6 @@ const Index = () => {
     </div>
   );
 
-  const categoryBar = (
-    <CategoryFilter
-      categories={categories}
-      active={activeCategory}
-      onSelect={setActiveCategory}
-    />
-  );
-
   const channelGrid = (cols: string) => (
     <>
       <div className={`grid ${cols} gap-2`}>
@@ -136,52 +132,97 @@ const Index = () => {
       </div>
       {filtered.length === 0 && (
         <p className="text-center text-sm text-muted-foreground py-8">
-          {activeCategory === "⭐ Favorites" ? "কোনো ফেভারিট চ্যানেল নেই। হার্ট আইকনে ক্লিক করে যোগ করুন।" : "কোনো চ্যানেল পাওয়া যায়নি।"}
+          {activeCategory === "⭐ Favorites" ? "কোনো ফেভারিট চ্যানেল নেই।" : "কোনো চ্যানেল পাওয়া যায়নি।"}
         </p>
       )}
     </>
   );
 
+  // ডানপাশের ফিচার্ড কলামের কন্টেন্ট
+  const featuredSection = (
+    <div className="space-y-3">
+      <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Featured Channels</h3>
+      <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+        {featuredChannels.map((channel, i) => (
+          <ChannelCard
+            key={`featured-${channel.url}-${i}`}
+            name={channel.channel || channel.name}
+            logo={channel.logo}
+            category={channel.category}
+            isActive={selectedChannel?.url === channel.url}
+            isFavorite={favorites.has(channel.url)}
+            onClick={() => setSelectedChannel(channel)}
+            onToggleFavorite={() => toggleFavorite(channel.url)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container py-4 space-y-4">
-        {/* Hero Banner */}
-        {!selectedChannel && (
-          <section className="animate-slide-up">
-            <div className="relative w-full overflow-hidden rounded-xl border border-border">
-              <img
-                src={heroBanner}
-                alt="সম্পূর্ণ ফ্রিতে দেখুন সব ধরনের লাইভ টিভি"
-                className="w-full h-auto object-cover"
-              />
-            </div>
-          </section>
-        )}
+      <main className="container py-4">
+        
+        {/* ─── DESKTOP MODE (৩-কলাম লেআউট) ─── */}
+        <div className="hidden lg:grid lg:grid-cols-12 gap-5 items-start">
+          
+          {/* LEFT: Scrollable Category (কলাম ২) */}
+          <aside className="lg:col-span-2 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto pr-1">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Categories</h3>
+            <CategoryFilter
+              categories={categories}
+              active={activeCategory}
+              onSelect={setActiveCategory}
+              layout="vertical" // যদি আপনার কম্পোনেন্ট ভার্টিকাল সাপোর্ট করে, না হলে এটা নরমাল থাকবে
+            />
+          </aside>
 
-        {selectedChannel ? (
-          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-8 xl:col-span-9 sticky top-2 z-40 self-start">
-              {playerSection}
-            </div>
-            <aside className="lg:col-span-4 xl:col-span-3">
-              <div className="lg:sticky lg:top-2 space-y-3 lg:max-h-[calc(100vh-1rem)] lg:overflow-y-auto pr-1">
-                {searchBar}
-                {categoryBar}
-                {channelGrid("grid-cols-3")}
+          {/* MIDDLE: Player or Banner + Grid (কলাম ৮) */}
+          <section className="lg:col-span-8 space-y-4">
+            {selectedChannel ? (
+              <div className="sticky top-4 z-40">
+                {playerSection}
               </div>
-            </aside>
-          </div>
-        ) : (
-          <section className="space-y-3">
-            {searchBar}
-            {categoryBar}
-            {channelGrid("grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8")}
+            ) : (
+              <div className="relative w-full overflow-hidden rounded-xl border border-border animate-slide-up">
+                <img src={heroBanner} alt="Live TV" className="w-full h-auto object-cover" />
+              </div>
+            )}
+            
+            {/* সার্চবার এবং মেইন চ্যানেল গ্রিড */}
+            <div className="space-y-3 pt-2">
+              {searchBar}
+              {channelGrid("grid-cols-3 xl:grid-cols-4")}
+            </div>
           </section>
-        )}
+
+          {/* RIGHT: Featured/Random Channels (কলাম ২) */}
+          <aside className="lg:col-span-2 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto pl-1">
+            {featuredSection}
+          </aside>
+        </div>
+
+        {/* ─── MOBILE & TABLET MODE (আগের মতই ঠিক থাকবে) ─── */}
+        <div className="lg:hidden space-y-4">
+          {!selectedChannel && (
+            <div className="relative w-full overflow-hidden rounded-xl border border-border">
+              <img src={heroBanner} alt="Live TV" className="w-full h-auto object-cover" />
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {selectedChannel && playerSection}
+            {searchBar}
+            <CategoryFilter categories={categories} active={activeCategory} onSelect={setActiveCategory} />
+            {channelGrid(selectedChannel ? "grid-cols-3" : "grid-cols-4 md:grid-cols-5")}
+          </div>
+        </div>
+
       </main>
     </div>
   );
 };
 
 export default Index;
+        
