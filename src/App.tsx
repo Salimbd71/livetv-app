@@ -5,10 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import Index from "./pages/Index.tsx";
-import Categories from "./pages/Categories";
-import Favorites from "./pages/Favorites";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
+import Categories from "./pages/Categories.tsx";
+import Favorites from "./pages/Favorites.tsx";
+import About from "./pages/About.tsx";
+import Contact from "./pages/Contact.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -21,16 +21,12 @@ const App = () => (
 
       <BrowserRouter>
         <Routes>
-          {/* Home */}
           <Route path="/" element={<Index />} />
-
-          {/* Custom pages */}
           <Route path="/categories" element={<Categories />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
 
-          {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
