@@ -31,7 +31,6 @@ const Navbar = () => {
   <a href="#" className="text-foreground">Home</a>
   <a href="#" className="hover:text-foreground transition">Categories</a>
   <a href="#" className="hover:text-foreground transition">Favorites</a>
-  <a href="#" className="hover:text-foreground transition">Schedule</a>
   <a href="#" className="hover:text-foreground transition">About</a>
   <a href="#" className="hover:text-foreground transition">Contact Us</a>
 </nav>
