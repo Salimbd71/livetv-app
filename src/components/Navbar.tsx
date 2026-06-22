@@ -28,11 +28,13 @@ const Navbar = () => {
           <span className="text-lg font-bold text-foreground">LiveTV</span>
         </div>
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-          <a href="#" className="text-foreground">Home</a>
-          <a href="#" className="hover:text-foreground transition">Guide</a>
-          <a href="#" className="hover:text-foreground transition">Channels</a>
-          <a href="#" className="hover:text-foreground transition">Library</a>
-        </nav>
+  <a href="#" className="text-foreground">Home</a>
+  <a href="#" className="hover:text-foreground transition">Categories</a>
+  <a href="#" className="hover:text-foreground transition">Favorites</a>
+  <a href="#" className="hover:text-foreground transition">Schedule</a>
+  <a href="#" className="hover:text-foreground transition">About</a>
+  <a href="#" className="hover:text-foreground transition">Contact Us</a>
+</nav>
       </div>
     </header>
   );
