@@ -5,6 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import Index from "./pages/Index.tsx";
+import Categories from "./pages/Categories.tsx";
+import Favorites from "./pages/Favorites.tsx";
+import About from "./pages/About.tsx";
 import Contact from "./pages/Contact.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -21,7 +24,10 @@ const App = () => (
           {/* Home */}
           <Route path="/" element={<Index />} />
 
-          {/* Test Contact Page */}
+          {/* Other Pages */}
+          <Route path="/categories" element={<Categories />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
 
           {/* 404 */}
