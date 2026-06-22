@@ -176,7 +176,7 @@ const Index = () => {
           <section className="space-y-3">
             {searchBar}
             {categoryBar}
-            {channelGrid("grid-cols-3")}
+            {channelGrid("grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8")}
           </section>
         )}
       </main>
