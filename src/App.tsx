@@ -21,8 +21,10 @@ const App = () => (
 
       <BrowserRouter>
         <Routes>
-          {/* Pages */}
+          {/* Home */}
           <Route path="/" element={<Index />} />
+
+          {/* Custom pages */}
           <Route path="/categories" element={<Categories />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/about" element={<About />} />
