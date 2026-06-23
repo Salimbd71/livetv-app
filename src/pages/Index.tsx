@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Search, X } from "lucide-react";
-import Navbar from "@/components/Navbar";
+// import Navbar from "@/components/Navbar";
 import VideoPlayer from "@/components/VideoPlayer";
 import ChannelCard from "@/components/ChannelCard";
 import CategoryFilter from "@/components/CategoryFilter";
@@ -144,7 +144,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+     // <Navbar/>
       <main className="container py-4 space-y-4">
         {/* Hero Banner */}
         {!selectedChannel && (
