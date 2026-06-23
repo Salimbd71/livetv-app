@@ -24,7 +24,7 @@ const App = () => (
         <Routes>
           {/* MainLayout কে প্যারেন্ট রুট হিসেবে রাখা হলো */}
           <Route path="/" element={<MainLayout />}>
-            <Route index element={<Index />} />
+
             <Route path="categories" element={<Categories />} />
             <Route path="favorites" element={<Favorites />} />
             <Route path="about" element={<About />} />
@@ -32,6 +32,7 @@ const App = () => (
           </Route>
 
           {/* 404 পেজ */}
+          <Route index element={<Index />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
