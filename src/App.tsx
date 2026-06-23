@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import MainLayout from "./MainLayout.tsx"; // Layout ইমপোর্ট করুন
 import Index from "./pages/Index.tsx";
 import Categories from "./pages/Categories.tsx";
 import Favorites from "./pages/Favorites.tsx";
@@ -21,16 +22,17 @@ const App = () => (
 
       <BrowserRouter>
         <Routes>
-          {/* Home */}
-          <Route path="/" element={<Index />} />
+          {/* MainLayout কে প্যারেন্ট রুট হিসেবে রাখা হলো */}
+          <Route path="/" element={<MainLayout />}>
+            {/* নিচের পেজগুলোতে অটোমেটিক Navbar চলে যাবে */}
+            <Route index element={<Index />} />
+            <Route path="categories" element={<Categories />} />
+            <Route path="favorites" element={<Favorites />} />
+            <Route path="about" element={<About />} />
+            <Route path="contact" element={<Contact />} />
+          </Route>
 
-          {/* Other Pages */}
-          <Route path="/categories" element={<Categories />} />
-          <Route path="/favorites" element={<Favorites />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-
-          {/* 404 */}
+          {/* ৪MD৪ পেজে যদি Navbar না দেখাতে চান, তবে তাকে Layout এর বাইরে রাখুন */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
