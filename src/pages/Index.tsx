@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Search, X } from "lucide-react";
-
+import Navbar from "@/components/Navbar";
 import VideoPlayer from "@/components/VideoPlayer";
 import ChannelCard from "@/components/ChannelCard";
 import CategoryFilter from "@/components/CategoryFilter";
