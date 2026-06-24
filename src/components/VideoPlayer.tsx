@@ -76,7 +76,9 @@ const VideoPlayer = ({
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setLoading(false);
-        video.play().catch(() => {});
+        if (isPlaying) {
+          video.play().catch(() => {});
+        }
       });
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (data.fatal) {
@@ -92,7 +94,9 @@ const VideoPlayer = ({
       video.src = u;
       video.addEventListener("loadedmetadata", () => {
         setLoading(false);
-        video.play().catch(() => {});
+        if (isPlaying) {
+          video.play().catch(() => {});
+        }
       });
       video.addEventListener("error", () => {
         setLoading(false);
@@ -112,7 +116,6 @@ const VideoPlayer = ({
         hlsRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
   const scheduleHide = () => {
@@ -120,7 +123,6 @@ const VideoPlayer = ({
     hideTimerRef.current = window.setTimeout(() => setShowControls(false), 3000);
   };
 
-  // Track play/pause
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -133,9 +135,6 @@ const VideoPlayer = ({
       setIsPlaying(false);
       setShowControls(true);
       if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
-      
-      // ⚠️ ফিক্স: যখন কোনো কারণে ভিডিও পজ হবে, তখন ব্যাকগ্রাউন্ডের অডিও মিউট বা রিলিজ করে দেওয়া
-      v.muted = true;
     };
     const updateTimes = () => {
       setCurrentTime(v.currentTime);
@@ -161,9 +160,8 @@ const VideoPlayer = ({
       v.removeEventListener("progress", updateTimes);
       v.removeEventListener("loadedmetadata", updateTimes);
     };
-  }, [muted]); // ⚠️ muted ডিপেন্ডেন্সি দেওয়া হয়েছে সঠিক ট্র্যাকিং এর জন্য
+  }, []);
 
-  // Fullscreen / PiP listeners
   useEffect(() => {
     const fs = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", fs);
@@ -179,17 +177,21 @@ const VideoPlayer = ({
     };
   }, []);
 
-  // ⚠️ ফিক্সড প্লে/পজ হ্যান্ডলার
+  // ⚠️ অডিও সহ ১০০% পারফেক্ট প্লে/পজ লজিক
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) {
-      // প্লে করার সময় আগের কাস্টম মিউট স্টেট ফিরিয়ে আনা
-      v.muted = muted;
-      v.play().catch(() => {});
-    } else {
+    
+    if (isPlaying) {
       v.pause();
-      v.muted = true; // পজ করার সাথে সাথে অডিও পুরোপুরি লক করে দেওয়া
+      setIsPlaying(false);
+      // লাইভ অডিও বাফার ফ্রিজ করতে hls স্টপ করা হলো
+      if (hlsRef.current) hlsRef.current.stopLoad();
+    } else {
+      if (hlsRef.current) hlsRef.current.startLoad();
+      v.play().then(() => {
+        setIsPlaying(true);
+      }).catch(() => {});
     }
   };
 
@@ -258,7 +260,7 @@ const VideoPlayer = ({
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 pointer-events-none">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="mt-3 text-sm text-muted-foreground">লোড হচ্ছে...</p>
+          <p className="mt-3 text-sm text-muted-foreground">로드 হচ্ছে...</p>
         </div>
       )}
 
@@ -298,7 +300,7 @@ const VideoPlayer = ({
         </button>
       </div>
 
-      {/* Center play/pause + prev/next */}
+      {/* Center controls */}
       <div
         className={`absolute inset-0 flex items-center justify-center gap-6 transition-opacity pointer-events-none ${
           showControls ? "opacity-100" : "opacity-0"
@@ -308,14 +310,12 @@ const VideoPlayer = ({
           onClick={onPrev}
           disabled={!hasPrev}
           className="pointer-events-auto rounded-full bg-background/60 p-2.5 text-foreground hover:bg-primary hover:text-primary-foreground transition disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="পূর্ববর্তী"
         >
           <SkipBack className="h-5 w-5" />
         </button>
         <button
           onClick={togglePlay}
           className="pointer-events-auto rounded-full bg-primary/90 p-4 text-primary-foreground hover:bg-primary transition shadow-lg"
-          aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
         </button>
@@ -323,7 +323,6 @@ const VideoPlayer = ({
           onClick={onNext}
           disabled={!hasNext}
           className="pointer-events-auto rounded-full bg-background/60 p-2.5 text-foreground hover:bg-primary hover:text-primary-foreground transition disabled:opacity-30 disabled:cursor-not-allowed"
-          aria-label="পরবর্তী"
         >
           <SkipForward className="h-5 w-5" />
         </button>
@@ -335,57 +334,11 @@ const VideoPlayer = ({
           showControls ? "opacity-100" : "opacity-0"
         }`}
       >
-        {/* Seek bar */}
-        {seekEnd > seekStart && (
-          <div className="relative w-full h-3 flex items-center group/seek">
-            {/* buffered track */}
-            <div className="absolute inset-x-0 h-1 rounded-full bg-foreground/20" />
-            <div
-              className="absolute h-1 rounded-full bg-foreground/40"
-              style={{
-                left: 0,
-                width: `${Math.min(100, ((bufferedEnd - seekStart) / (seekEnd - seekStart)) * 100)}%`,
-              }}
-            />
-            <input
-              type="range"
-              min={seekStart}
-              max={seekEnd}
-              step={0.1}
-              value={Math.min(Math.max(currentTime, seekStart), seekEnd)}
-              onChange={(e) => {
-                const v = videoRef.current;
-                if (v) v.currentTime = parseFloat(e.target.value);
-              }}
-              className="absolute inset-0 w-full opacity-0 cursor-pointer z-10"
-              aria-label="Seek"
-            />
-            <div
-              className="absolute h-1 rounded-full bg-primary pointer-events-none"
-              style={{
-                left: 0,
-                width: `${Math.min(100, Math.max(0, ((currentTime - seekStart) / (seekEnd - seekStart)) * 100))}%`,
-              }}
-            />
-            <div
-              className="absolute h-3 w-3 rounded-full bg-primary pointer-events-none -translate-x-1/2 opacity-0 group-hover/seek:opacity-100 transition"
-              style={{
-                left: `${Math.min(100, Math.max(0, ((currentTime - seekStart) / (seekEnd - seekStart)) * 100))}%`,
-              }}
-            />
-          </div>
-        )}
         <div className="flex items-center gap-3">
-          <button onClick={togglePlay} className="text-foreground hover:text-primary transition" aria-label={isPlaying ? "Pause" : "Play"}>
+          <button onClick={togglePlay} className="text-foreground hover:text-primary transition">
             {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
           </button>
-          <button onClick={onPrev} disabled={!hasPrev} className="text-foreground hover:text-primary transition disabled:opacity-30" aria-label="পূর্ববর্তী">
-            <SkipBack className="h-5 w-5" />
-          </button>
-          <button onClick={onNext} disabled={!hasNext} className="text-foreground hover:text-primary transition disabled:opacity-30" aria-label="পরবর্তী">
-            <SkipForward className="h-5 w-5" />
-          </button>
-          <button onClick={toggleMute} className="text-foreground hover:text-primary transition" aria-label={muted ? "Unmute" : "Mute"}>
+          <button onClick={onMute} className="text-foreground hover:text-primary transition">
             {muted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </button>
           <input
@@ -396,13 +349,12 @@ const VideoPlayer = ({
             value={muted ? 0 : volume}
             onChange={(e) => changeVolume(parseFloat(e.target.value))}
             className="hidden sm:block w-20 accent-primary"
-            aria-label="ভলিউম"
           />
           <div className="flex-1" />
-          <button onClick={togglePip} className="text-foreground hover:text-primary transition" aria-label="Floating player">
+          <button onClick={togglePip} className="text-foreground hover:text-primary transition">
             <PictureInPicture2 className={`h-5 w-5 ${isPip ? "text-primary" : ""}`} />
           </button>
-          <button onClick={toggleFullscreen} className="text-foreground hover:text-primary transition" aria-label="Fullscreen">
+          <button onClick={toggleFullscreen} className="text-foreground hover:text-primary transition">
             {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
           </button>
         </div>
@@ -412,4 +364,4 @@ const VideoPlayer = ({
 };
 
 export default VideoPlayer;
-  
+    
