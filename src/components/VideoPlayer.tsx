@@ -79,7 +79,7 @@ const VideoPlayer = ({
       video.pause();
 
       video.muted = true;
-      video.volume = 0;
+      video.volume = 1;
 
       video.removeAttribute("src");
       video.src = "";
