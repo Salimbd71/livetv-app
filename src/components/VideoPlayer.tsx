@@ -163,7 +163,7 @@ const VideoPlayer = ({
   useEffect(() => {
 
 
-
+loadStream(url);
     
     return () => {
       destroyPlayer(); // প্লেয়ার ক্লোজ বা চ্যানেল চেঞ্জ হলে ওল্ড মিউজিক ডেড হবে
