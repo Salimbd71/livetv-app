@@ -56,6 +56,7 @@ const VideoPlayer = ({
     if (!video) return;
     setError(null);
     setLoading(true);
+    setIsPlaying(true); // নতুন চ্যানেল লোড হলে অটো-প্লে অন হবে
 
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -65,21 +66,21 @@ const VideoPlayer = ({
     if (Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
-        lowLatencyMode: false,
-        backBufferLength: 30,
-        maxBufferLength: 30,
-        maxMaxBufferLength: 60,
-        liveSyncDurationCount: 6,
+        lowLatencyMode: true,
+        backBufferLength: 10,
+        maxBufferLength: 10,
+        maxMaxBufferLength: 20,
+        liveSyncDurationCount: 3,
       });
       hlsRef.current = hls;
       hls.loadSource(u);
       hls.attachMedia(video);
+      
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setLoading(false);
-        if (isPlaying) {
-          video.play().catch(() => {});
-        }
+        video.play().catch(() => {});
       });
+
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (data.fatal) {
           setLoading(false);
@@ -94,9 +95,7 @@ const VideoPlayer = ({
       video.src = u;
       video.addEventListener("loadedmetadata", () => {
         setLoading(false);
-        if (isPlaying) {
-          video.play().catch(() => {});
-        }
+        video.play().catch(() => {});
       });
       video.addEventListener("error", () => {
         setLoading(false);
@@ -108,6 +107,7 @@ const VideoPlayer = ({
     }
   };
 
+  // URL চেঞ্জ হলে নতুন চ্যানেল লোড হবে
   useEffect(() => {
     loadStream(url);
     return () => {
@@ -123,19 +123,23 @@ const VideoPlayer = ({
     hideTimerRef.current = window.setTimeout(() => setShowControls(false), 3000);
   };
 
+  // HTML5 Video Events Tracker
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
+
     const onPlay = () => {
       setIsPlaying(true);
       setShowControls(true);
       scheduleHide();
     };
+
     const onPause = () => {
       setIsPlaying(false);
       setShowControls(true);
       if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
     };
+
     const updateTimes = () => {
       setCurrentTime(v.currentTime);
       if (v.seekable.length > 0) {
@@ -146,12 +150,14 @@ const VideoPlayer = ({
         setBufferedEnd(v.buffered.end(v.buffered.length - 1));
       }
     };
+
     v.addEventListener("play", onPlay);
     v.addEventListener("pause", onPause);
     v.addEventListener("playing", onPlay);
     v.addEventListener("timeupdate", updateTimes);
     v.addEventListener("progress", updateTimes);
     v.addEventListener("loadedmetadata", updateTimes);
+
     return () => {
       v.removeEventListener("play", onPlay);
       v.removeEventListener("pause", onPause);
@@ -162,6 +168,7 @@ const VideoPlayer = ({
     };
   }, []);
 
+  // Fullscreen / PiP Listeners
   useEffect(() => {
     const fs = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", fs);
@@ -177,21 +184,22 @@ const VideoPlayer = ({
     };
   }, []);
 
-  // ⚠️ অডিও সহ ১০০% পারফেক্ট প্লে/পজ লজিক
+  // ⚠️ ১০০% ওয়ার্কিং প্লে/পজ হ্যান্ডলার (অডিও বাগ ফিক্সড)
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
-    
-    if (isPlaying) {
+
+    if (!v.paused) {
       v.pause();
+      v.muted = true; // অডিও বাফার ক্লিপিং বন্ধ করার জন্য ফোর্স মিউট
       setIsPlaying(false);
-      // লাইভ অডিও বাফার ফ্রিজ করতে hls স্টপ করা হলো
-      if (hlsRef.current) hlsRef.current.stopLoad();
     } else {
-      if (hlsRef.current) hlsRef.current.startLoad();
-      v.play().then(() => {
-        setIsPlaying(true);
-      }).catch(() => {});
+      v.muted = muted; // আগের ইউজার মিউট স্টেট রিস্টোর
+      v.play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(() => {});
     }
   };
 
@@ -260,7 +268,7 @@ const VideoPlayer = ({
       {loading && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 pointer-events-none">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <p className="mt-3 text-sm text-muted-foreground">로드 হচ্ছে...</p>
+          <p className="mt-3 text-sm text-muted-foreground">লোড হচ্ছে...</p>
         </div>
       )}
 
@@ -294,7 +302,6 @@ const VideoPlayer = ({
         <button
           onClick={onClose}
           className="rounded-full bg-secondary/80 p-1.5 text-foreground hover:bg-destructive transition flex-shrink-0"
-          aria-label="বন্ধ"
         >
           <X className="h-4 w-4" />
         </button>
@@ -338,7 +345,7 @@ const VideoPlayer = ({
           <button onClick={togglePlay} className="text-foreground hover:text-primary transition">
             {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
           </button>
-          <button onClick={onMute} className="text-foreground hover:text-primary transition">
+          <button onClick={toggleMute} className="text-foreground hover:text-primary transition">
             {muted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </button>
           <input
@@ -364,4 +371,4 @@ const VideoPlayer = ({
 };
 
 export default VideoPlayer;
-    
+        
