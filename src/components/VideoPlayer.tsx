@@ -116,8 +116,8 @@ const VideoPlayer = ({
       
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
   setLoading(false);
-  video.muted = true; // 👈 প্রথমবার ট্রু করে দিন, অথবা ইউজারকে 'Click to Play' বাটন দেখান
-  setMuted(true); 
+  video.muted = false; // 👈 প্রথমবার ট্রু করে দিন, অথবা ইউজারকে 'Click to Play' বাটন দেখান
+  setMuted(false); 
   video.play().catch(() => {});
 });
 
