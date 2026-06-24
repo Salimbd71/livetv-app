@@ -262,7 +262,7 @@ const VideoPlayer = ({
 
       video.pause();
 
-    
+      video.muted = true;
 
       setIsPlaying(false);
 
