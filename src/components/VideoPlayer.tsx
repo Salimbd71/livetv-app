@@ -54,42 +54,36 @@ const VideoPlayer = ({
 
   // ⚠️ মেমোরি থেকে পুরাতন সমস্ত স্ট্রিম এবং অডিও ট্র্যাকিং ডিলিট করার মাস্টার ফাংশন
   const destroyPlayer = () => {
-
-  if (hideTimerRef.current) {
-    clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = null;
-  }
-
-  if (hlsRef.current) {
-    try {
-      hlsRef.current.stopLoad();
-      hlsRef.current.detachMedia();
-      hlsRef.current.destroy();
-    } catch (e) {
-      console.error(e);
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
     }
 
-    hlsRef.current = null;
-  }
-
-  const video = videoRef.current;
-
-  if (video) {
-    try {
-      video.pause();
-
-      video.muted = true;
-      video.volume = 0;
-
-      video.removeAttribute("src");
-      video.src = "";
-
-      video.load();
-    } catch (e) {
-      console.error(e);
+    if (hlsRef.current) {
+      try {
+        hlsRef.current.stopLoad();
+        hlsRef.current.detachMedia();
+        hlsRef.current.destroy();
+      } catch (e) {
+        console.error(e);
+      }
+      hlsRef.current = null;
     }
-  }
-};
+
+    const video = videoRef.current;
+    if (video) {
+      try {
+        video.pause();
+        video.muted = true;
+        video.volume = 0;
+        video.removeAttribute("src");
+        video.src = "";
+        video.load();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
 
   const loadStream = (u: string) => {
     const video = videoRef.current;
@@ -115,42 +109,38 @@ const VideoPlayer = ({
       hls.attachMedia(video);
       
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-  setLoading(false);
-  // ⚠️ ফিক্স: প্রথমবার প্লে হওয়ার সময় সরাসরি স্টেটের ভ্যালু রিড না করে ইনিশিয়াল ভ্যালু পুশ করা
-  video.muted = false; 
-  video.volume = 1; 
-  video.play().catch(() => {});
-});
-
+        setLoading(false);
+        // ফিক্স: প্রথমবার প্লে হওয়ার সময় সরাসরি সঠিক মিউট ও ভলিউম স্টেট পুশ করা
+        video.muted = muted; 
+        video.volume = volume; 
+        video.play().catch(() => {});
+      });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (!data.fatal) return;
 
-  if (!data.fatal) return;
-
-  switch (data.type) {
-
-    case Hls.ErrorTypes.NETWORK_ERROR:
-      console.log("Recovering network error");
-      hls.startLoad();
-      break;
-
-    case Hls.ErrorTypes.MEDIA_ERROR:
-      console.log("Recovering media error");
-      hls.recoverMediaError();
-      break;
-
-    default:
-      destroyPlayer();
-      setLoading(false);
-      setError("এই চ্যানেল এখন প্লে হচ্ছে না।");
-      break;
-  }
-});
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            console.log("Recovering network error");
+            hls.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            console.log("Recovering media error");
+            hls.recoverMediaError();
+            break;
+          default:
+            destroyPlayer();
+            setLoading(false);
+            setError("এই চ্যানেল এখন প্লে হচ্ছে না।");
+            break;
+        }
+      });
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = u;
       video.addEventListener("loadedmetadata", () => {
         setLoading(false);
         video.muted = muted;
+        video.volume = volume;
         video.play().catch(() => {});
       });
     } else {
@@ -161,9 +151,7 @@ const VideoPlayer = ({
 
   // ১. ইউআরএল চেঞ্জ ট্র্যাকিং এবং মেমোরি রিলিজ
   useEffect(() => {
-
-
-loadStream(url);
+    loadStream(url);
     
     return () => {
       destroyPlayer(); // প্লেয়ার ক্লোজ বা চ্যানেল চেঞ্জ হলে ওল্ড মিউজিক ডেড হবে
@@ -215,8 +203,7 @@ loadStream(url);
     };
   }, []);
 
-  // ফুলস্ক্রিন ট্র্যাকিং
-    // সঠিক ফুলস্ক্রিন ট্র্যাকিং (এখানে কোনো loadStream থাকবে না)
+  // ৩. সঠিক ফুলস্ক্রিন ট্র্যাকিং (কোনো ডাবল রেন্ডার ইফেক্ট হবে না)
   useEffect(() => {
     const fs = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", fs);
@@ -225,45 +212,34 @@ loadStream(url);
     };
   }, []);
 
-  // ⚠️ ৩. মাস্টার প্লে/পজ লজিক (যা অডিও বাফারকে জিরো করে দেয়)
+  // ⚠️ ৪. কাস্টম প্লে/পজ লজিক
   const togglePlay = async () => {
+    const video = videoRef.current;
+    if (!video) return;
 
-  const video = videoRef.current;
-
-  if (!video) return;
-
-  try {
-
-    if (!video.paused) {
-
-      video.pause();
-
-      video.muted = true;
-
-      setIsPlaying(false);
-
-    } else {
-
-      video.muted = muted;
-      video.volume = volume;
-
-      await video.play();
-
-      setIsPlaying(true);
-
-      scheduleHide();
+    try {
+      if (!video.paused) {
+        video.pause();
+        video.muted = true; // অডিও ট্র্যাকিং অফ করার জন্য
+        setIsPlaying(false);
+      } else {
+        video.muted = muted;
+        video.volume = volume;
+        await video.play();
+        setIsPlaying(true);
+        scheduleHide();
+      }
+    } catch (e) {
+      console.error(e);
     }
-
-  } catch (e) {
-    console.error(e);
-  }
-};
+  };
 
   const toggleMute = () => {
     const v = videoRef.current;
     if (!v) return;
-    v.muted = !muted;
-    setMuted(!muted);
+    const nextMuted = !muted;
+    v.muted = nextMuted;
+    setMuted(nextMuted);
   };
 
   const changeVolume = (val: number) => {
@@ -271,9 +247,12 @@ loadStream(url);
     if (!v) return;
     v.volume = val;
     setVolume(val);
-    if (val > 0 && muted) {
+    if (val > 0) {
       v.muted = false;
       setMuted(false);
+    } else {
+      v.muted = true;
+      setMuted(true);
     }
   };
 
@@ -392,3 +371,4 @@ loadStream(url);
 };
 
 export default VideoPlayer;
+      
