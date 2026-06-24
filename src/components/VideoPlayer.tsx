@@ -98,8 +98,6 @@ const VideoPlayer = ({
     // নতুন কিছু লোড করার আগে পুরানো সব ট্রাফিকের অডিও-ভিডিও ধ্বংস করি
     destroyPlayer();
     
-    
-    video.volume = volume; // new add
     setError(null);
     setLoading(true);
     setIsPlaying(true);
