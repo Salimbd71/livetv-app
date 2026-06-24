@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react"; // ⚠️ useEffect যোগ করা হয়েছে
 import { useSearchParams } from "react-router-dom"; // ⚠️ useSearchParams যোগ করা হয়েছে
 import { Search, X } from "lucide-react";
+// ⚠️ Navbar ইমপোর্ট রিমুভ করা হয়েছে (MainLayout-এ আছে)
 import VideoPlayer from "@/components/VideoPlayer";
 import ChannelCard from "@/components/ChannelCard";
 import CategoryFilter from "@/components/CategoryFilter";
@@ -16,7 +17,6 @@ interface Channel {
 }
 
 const channels: Channel[] = channelsData;
-
 const FAVORITES_KEY = "livetv_favorites";
 
 const loadFavorites = (): Set<string> => {
@@ -40,11 +40,11 @@ const Index = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
-  
+
   // ⚠️ URL থেকে কুয়েরি প্যারামিটার রিড করার জন্য
   const [searchParams] = useSearchParams();
 
-  // ⚠️ URL-এ কোনো ক্যাটাগরি থাকলে তা সেট করার জন্য useEffect
+  // ⚠️ URL-এ ক্যাটাগরি চেঞ্জ হলে বা ক্যাটাগরি পেজ থেকে আসলে তা ট্র্যাক করার জন্য
   useEffect(() => {
     const catParam = searchParams.get("category");
     if (catParam && categories.includes(catParam)) {
@@ -80,6 +80,10 @@ const Index = () => {
     }
     return result;
   }, [activeCategory, searchQuery, favorites]);
+
+  const featuredChannels = useMemo(() => {
+    return channels.slice(0, 4);
+  }, []);
 
   const idx = selectedChannel ? filtered.findIndex((c) => c.url === selectedChannel.url) : -1;
   const hasPrev = idx > 0;
@@ -121,14 +125,6 @@ const Index = () => {
     </div>
   );
 
-  const categoryBar = (
-    <CategoryFilter
-      categories={categories}
-      active={activeCategory}
-      onSelect={setActiveCategory}
-    />
-  );
-
   const channelGrid = (cols: string) => (
     <>
       <div className={`grid ${cols} gap-2`}>
@@ -147,7 +143,7 @@ const Index = () => {
       </div>
       {filtered.length === 0 && (
         <p className="text-center text-sm text-muted-foreground py-8">
-          {activeCategory === "⭐ Favorites" ? "কোনো ফেভারিট চ্যানেল নেই। হার্ট আইকনে ক্লিক করে যোগ করুন।" : "কোনো চ্যানেল পাওয়া যায়নি।"}
+          {activeCategory === "⭐ Favorites" ? "কোনো ফেভারিট চ্যানেল নেই।" : "কোনো চ্যানেল পাওয়া যায়নি।"}
         </p>
       )}
     </>
@@ -155,43 +151,98 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container py-4 space-y-4">
-        {!selectedChannel && (
-          <section className="animate-slide-up">
-            <div className="relative w-full overflow-hidden rounded-xl border border-border">
-              <img
-                src={heroBanner}
-                alt="সম্পূর্ণ ফ্রিতে দেখুন সব ধরনের লাইভ টিভি"
-                className="w-full h-auto object-cover"
-              />
-            </div>
-          </section>
-        )}
+      {/* ⚠️ এখানে থাকা <Navbar /> সফলভাবে রিমুভড */}
+      <main className="container py-4">
+        
+        {/* ─── DESKTOP MODE ─── */}
+        <div className="hidden lg:block">
+          {!selectedChannel ? (
+            /* ১. হোম স্ক্রিন (৩-কলাম লেআউট) */
+            <div className="grid grid-cols-12 gap-5 items-start">
+              {/* LEFT: Scrollable Vertical Category */}
+              <aside className="col-span-2 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto pr-1">
+                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Categories</h3>
+                <CategoryFilter
+                  categories={categories}
+                  active={activeCategory}
+                  onSelect={setActiveCategory}
+                  layout="vertical"
+                />
+              </aside>
 
-        {selectedChannel ? (
-          <div className="flex flex-col lg:grid lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-8 xl:col-span-9 sticky top-2 z-40 self-start">
-              {playerSection}
+              {/* MIDDLE: Hero Img + Grid */}
+              <section className="col-span-8 space-y-4">
+                <div className="relative w-full overflow-hidden rounded-xl border border-border animate-slide-up">
+                  <img src={heroBanner} alt="Live TV" className="w-full h-auto object-cover" />
+                </div>
+                
+                <div className="space-y-3 pt-2">
+                  {searchBar}
+                  {channelGrid("grid-cols-3 xl:grid-cols-4")}
+                </div>
+              </section>
+
+              {/* RIGHT: Featured Random Channels */}
+              <aside className="col-span-2 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto pl-1">
+                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Featured</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  {featuredChannels.map((channel, i) => (
+                    <ChannelCard
+                      key={`featured-${channel.url}-${i}`}
+                      name={channel.channel || channel.name}
+                      logo={channel.logo}
+                      category={channel.category}
+                      isActive={false}
+                      isFavorite={favorites.has(channel.url)}
+                      onClick={() => setSelectedChannel(channel)}
+                      onToggleFavorite={() => toggleFavorite(channel.url)}
+                    />
+                  ))}
+                </div>
+              </aside>
             </div>
-            <aside className="lg:col-span-4 xl:col-span-3">
-              <div className="lg:sticky lg:top-2 space-y-3 lg:max-h-[calc(100vh-1rem)] lg:overflow-y-auto pr-1">
+          ) : (
+            /* ২. প্লেয়ার স্ক্রিন (২-কলাম লেআউট) */
+            <div className="grid grid-cols-12 gap-5 items-start">
+              <section className="col-span-8 sticky top-4">
+                {playerSection}
+              </section>
+
+              <aside className="col-span-4 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto pr-1 space-y-4">
                 {searchBar}
-                {categoryBar}
-                {channelGrid("grid-cols-3")}
-              </div>
-            </aside>
-          </div>
-        ) : (
-          <section className="space-y-3">
+                <CategoryFilter
+                  categories={categories}
+                  active={activeCategory}
+                  onSelect={setActiveCategory}
+                />
+                <div className="pt-2">
+                  {channelGrid("grid-cols-2 xl:grid-cols-3")}
+                </div>
+              </aside>
+            </div>
+          )}
+        </div>
+
+        {/* ─── MOBILE & TABLET MODE ─── */}
+        <div className="lg:hidden space-y-4">
+          {!selectedChannel && (
+            <div className="relative w-full overflow-hidden rounded-xl border border-border">
+              <img src={heroBanner} alt="Live TV" className="w-full h-auto object-cover" />
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {selectedChannel && playerSection}
             {searchBar}
-            {categoryBar}
-            {channelGrid("grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8")}
-          </section>
-        )}
+            <CategoryFilter categories={categories} active={activeCategory} onSelect={setActiveCategory} />
+            {channelGrid(selectedChannel ? "grid-cols-3" : "grid-cols-4 md:grid-cols-5")}
+          </div>
+        </div>
+
       </main>
     </div>
   );
 };
 
 export default Index;
-    
+              
