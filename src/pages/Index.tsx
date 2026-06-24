@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react"; // ⚠️ useEffect যোগ করা হয়েছে
+import { useSearchParams } from "react-router-dom"; // ⚠️ useSearchParams যোগ করা হয়েছে
 import { Search, X } from "lucide-react";
 import VideoPlayer from "@/components/VideoPlayer";
 import ChannelCard from "@/components/ChannelCard";
@@ -39,6 +40,17 @@ const Index = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
+  
+  // ⚠️ URL থেকে কুয়েরি প্যারামিটার রিড করার জন্য
+  const [searchParams] = useSearchParams();
+
+  // ⚠️ URL-এ কোনো ক্যাটাগরি থাকলে তা সেট করার জন্য useEffect
+  useEffect(() => {
+    const catParam = searchParams.get("category");
+    if (catParam && categories.includes(catParam)) {
+      setActiveCategory(catParam);
+    }
+  }, [searchParams]);
 
   const toggleFavorite = useCallback((url: string) => {
     setFavorites((prev) => {
@@ -143,9 +155,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-     
       <main className="container py-4 space-y-4">
-        {/* Hero Banner */}
         {!selectedChannel && (
           <section className="animate-slide-up">
             <div className="relative w-full overflow-hidden rounded-xl border border-border">
@@ -184,3 +194,4 @@ const Index = () => {
 };
 
 export default Index;
+    
