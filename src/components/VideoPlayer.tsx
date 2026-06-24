@@ -38,6 +38,7 @@ const VideoPlayer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const hideTimerRef = useRef<number | null>(null);
+  
   const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -51,26 +52,39 @@ const VideoPlayer = ({
   const [seekEnd, setSeekEnd] = useState(0);
   const [bufferedEnd, setBufferedEnd] = useState(0);
 
-  const loadStream = (u: string) => {
-    const video = videoRef.current;
-    if (!video) return;
-    setError(null);
-    setLoading(true);
-    setIsPlaying(true); // নতুন চ্যানেল লোড হলে অটো-প্লে অন হবে
-
+  // ⚠️ মেমোরি থেকে পুরাতন সমস্ত স্ট্রিম এবং অডিও ট্র্যাকিং ডিলিট করার মাস্টার ফাংশন
+  const destroyPlayer = () => {
     if (hlsRef.current) {
+      hlsRef.current.detachMedia();
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.removeAttribute("src");
+      video.load(); // ব্রাউজার মেমোরির বাফার খালি করার জন্য
+    }
+  };
+
+  const loadStream = (u: string) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // নতুন কিছু লোড করার আগে পুরানো সব ট্রাফিকের অডিও-ভিডিও ধ্বংস করি
+    destroyPlayer();
+    
+    setError(null);
+    setLoading(true);
+    setIsPlaying(true);
 
     if (Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 10,
-        maxBufferLength: 10,
-        maxMaxBufferLength: 20,
-        liveSyncDurationCount: 3,
+        backBufferLength: 0, // ব্যাক বাফার ০ করা হলো যাতে পুরাতন অডিও মেমোরিতে না জমে
+        maxBufferLength: 5,  
+        maxMaxBufferLength: 10,
       });
       hlsRef.current = hls;
       hls.loadSource(u);
@@ -78,43 +92,34 @@ const VideoPlayer = ({
       
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setLoading(false);
+        video.muted = muted; // আগের সিলেক্টেড মিউট স্টেট
         video.play().catch(() => {});
       });
 
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (data.fatal) {
           setLoading(false);
-          setError(
-            data.type === Hls.ErrorTypes.NETWORK_ERROR
-              ? "নেটওয়ার্ক সমস্যা।"
-              : "এই চ্যানেল এখন প্লে হচ্ছে না।"
-          );
+          setError("এই চ্যানেল এখন প্লে হচ্ছে না।");
         }
       });
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = u;
       video.addEventListener("loadedmetadata", () => {
         setLoading(false);
+        video.muted = muted;
         video.play().catch(() => {});
       });
-      video.addEventListener("error", () => {
-        setLoading(false);
-        setError("এই চ্যানেল এখন প্লে হচ্ছে না।");
-      });
     } else {
-      setError("আপনার ব্রাউজার HLS সাপোর্ট করে না।");
+      setError("HLS নট সাপোর্টেড।");
       setLoading(false);
     }
   };
 
-  // URL চেঞ্জ হলে নতুন চ্যানেল লোড হবে
+  // ১. ইউআরএল চেঞ্জ ট্র্যাকিং এবং মেমোরি রিলিজ
   useEffect(() => {
     loadStream(url);
     return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
+      destroyPlayer(); // প্লেয়ার ক্লোজ বা চ্যানেল চেঞ্জ হলে ওল্ড মিউজিক ডেড হবে
     };
   }, [url]);
 
@@ -123,7 +128,7 @@ const VideoPlayer = ({
     hideTimerRef.current = window.setTimeout(() => setShowControls(false), 3000);
   };
 
-  // HTML5 Video Events Tracker
+  // ২. রিঅ্যাক্ট ইভেন্ট লিসেনার সিঙ্ক (ডাবল অডিও প্রোটেকশন)
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -137,7 +142,6 @@ const VideoPlayer = ({
     const onPause = () => {
       setIsPlaying(false);
       setShowControls(true);
-      if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
     };
 
     const updateTimes = () => {
@@ -155,46 +159,33 @@ const VideoPlayer = ({
     v.addEventListener("pause", onPause);
     v.addEventListener("playing", onPlay);
     v.addEventListener("timeupdate", updateTimes);
-    v.addEventListener("progress", updateTimes);
-    v.addEventListener("loadedmetadata", updateTimes);
 
     return () => {
       v.removeEventListener("play", onPlay);
       v.removeEventListener("pause", onPause);
       v.removeEventListener("playing", onPlay);
       v.removeEventListener("timeupdate", updateTimes);
-      v.removeEventListener("progress", updateTimes);
-      v.removeEventListener("loadedmetadata", updateTimes);
     };
   }, []);
 
-  // Fullscreen / PiP Listeners
+  // ফুলস্ক্রিন ট্র্যাকিং
   useEffect(() => {
     const fs = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", fs);
-    const v = videoRef.current;
-    const enter = () => setIsPip(true);
-    const leave = () => setIsPip(false);
-    v?.addEventListener("enterpictureinpicture", enter);
-    v?.addEventListener("leavepictureinpicture", leave);
-    return () => {
-      document.removeEventListener("fullscreenchange", fs);
-      v?.removeEventListener("enterpictureinpicture", enter);
-      v?.removeEventListener("leavepictureinpicture", leave);
-    };
+    return () => document.removeEventListener("fullscreenchange", fs);
   }, []);
 
-  // ⚠️ ১০০% ওয়ার্কিং প্লে/পজ হ্যান্ডলার (অডিও বাগ ফিক্সড)
+  // ⚠️ ৩. মাস্টার প্লে/পজ লজিক (যা অডিও বাফারকে জিরো করে দেয়)
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
 
-    if (!v.paused) {
+    if (isPlaying) {
       v.pause();
-      v.muted = true; // অডিও বাফার ক্লিপিং বন্ধ করার জন্য ফোর্স মিউট
+      v.muted = true; // মেমোরি কনটেক্সট লেভেলে অডিও লক
       setIsPlaying(false);
     } else {
-      v.muted = muted; // আগের ইউজার মিউট স্টেট রিস্টোর
+      v.muted = muted;
       v.play()
         .then(() => {
           setIsPlaying(true);
@@ -239,21 +230,14 @@ const VideoPlayer = ({
       } else if (document.pictureInPictureEnabled) {
         await v.requestPictureInPicture();
       }
-    } catch {
-      /* noop */
-    }
-  };
-
-  const revealControls = () => {
-    setShowControls(true);
-    scheduleHide();
+    } catch { /* noop */ }
   };
 
   return (
     <div
       ref={containerRef}
-      onMouseMove={revealControls}
-      onTouchStart={revealControls}
+      onMouseMove={() => { setShowControls(true); scheduleHide(); }}
+      onTouchStart={() => { setShowControls(true); scheduleHide(); }}
       className="group relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-background"
     >
       <video
@@ -262,7 +246,6 @@ const VideoPlayer = ({
         className="h-full w-full object-contain bg-background"
         playsInline
         autoPlay
-        muted={muted}
       />
 
       {loading && (
@@ -285,22 +268,14 @@ const VideoPlayer = ({
       )}
 
       {/* Top bar */}
-      <div
-        className={`absolute top-0 left-0 right-0 flex items-center justify-between p-3 bg-gradient-to-b from-background/90 to-transparent transition-opacity ${
-          showControls ? "opacity-100" : "opacity-0"
-        }`}
-      >
+      <div className={`absolute top-0 left-0 right-0 flex items-center justify-between p-3 bg-gradient-to-b from-background/90 to-transparent transition-opacity ${showControls ? "opacity-100" : "opacity-0"}`}>
         <div className="flex items-center gap-2 min-w-0">
-          {logo && (
-            <img src={logo} alt={name} className="h-7 w-7 rounded object-contain bg-secondary flex-shrink-0" />
-          )}
+          {logo && <img src={logo} alt={name} className="h-7 w-7 rounded object-contain bg-secondary flex-shrink-0" />}
           <span className="text-sm font-semibold text-foreground truncate">{name}</span>
-          <span className="rounded bg-live px-1.5 py-0.5 text-[10px] font-bold uppercase text-live-foreground animate-pulse-live flex-shrink-0">
-            Live
-          </span>
+          <span className="rounded bg-live px-1.5 py-0.5 text-[10px] font-bold uppercase text-live-foreground animate-pulse-live flex-shrink-0">Live</span>
         </div>
         <button
-          onClick={onClose}
+          onClick={() => { destroyPlayer(); onClose(); }}
           className="rounded-full bg-secondary/80 p-1.5 text-foreground hover:bg-destructive transition flex-shrink-0"
         >
           <X className="h-4 w-4" />
@@ -308,39 +283,20 @@ const VideoPlayer = ({
       </div>
 
       {/* Center controls */}
-      <div
-        className={`absolute inset-0 flex items-center justify-center gap-6 transition-opacity pointer-events-none ${
-          showControls ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <button
-          onClick={onPrev}
-          disabled={!hasPrev}
-          className="pointer-events-auto rounded-full bg-background/60 p-2.5 text-foreground hover:bg-primary hover:text-primary-foreground transition disabled:opacity-30 disabled:cursor-not-allowed"
-        >
+      <div className={`absolute inset-0 flex items-center justify-center gap-6 transition-opacity pointer-events-none ${showControls ? "opacity-100" : "opacity-0"}`}>
+        <button onClick={onPrev} disabled={!hasPrev} className="pointer-events-auto rounded-full bg-background/60 p-2.5 text-foreground hover:bg-primary hover:text-primary-foreground transition disabled:opacity-30 disabled:cursor-not-allowed">
           <SkipBack className="h-5 w-5" />
         </button>
-        <button
-          onClick={togglePlay}
-          className="pointer-events-auto rounded-full bg-primary/90 p-4 text-primary-foreground hover:bg-primary transition shadow-lg"
-        >
+        <button onClick={togglePlay} className="pointer-events-auto rounded-full bg-primary/90 p-4 text-primary-foreground hover:bg-primary transition shadow-lg">
           {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
         </button>
-        <button
-          onClick={onNext}
-          disabled={!hasNext}
-          className="pointer-events-auto rounded-full bg-background/60 p-2.5 text-foreground hover:bg-primary hover:text-primary-foreground transition disabled:opacity-30 disabled:cursor-not-allowed"
-        >
+        <button onClick={onNext} disabled={!hasNext} className="pointer-events-auto rounded-full bg-background/60 p-2.5 text-foreground hover:bg-primary hover:text-primary-foreground transition disabled:opacity-30 disabled:cursor-not-allowed">
           <SkipForward className="h-5 w-5" />
         </button>
       </div>
 
       {/* Bottom controls */}
-      <div
-        className={`absolute bottom-0 left-0 right-0 flex flex-col gap-1 p-3 bg-gradient-to-t from-background/90 to-transparent transition-opacity ${
-          showControls ? "opacity-100" : "opacity-0"
-        }`}
-      >
+      <div className={`absolute bottom-0 left-0 right-0 flex flex-col gap-1 p-3 bg-gradient-to-t from-background/90 to-transparent transition-opacity ${showControls ? "opacity-100" : "opacity-0"}`}>
         <div className="flex items-center gap-3">
           <button onClick={togglePlay} className="text-foreground hover:text-primary transition">
             {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
@@ -371,4 +327,3 @@ const VideoPlayer = ({
 };
 
 export default VideoPlayer;
-        
