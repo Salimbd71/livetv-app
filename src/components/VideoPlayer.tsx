@@ -79,7 +79,7 @@ const VideoPlayer = ({
       video.pause();
 
       video.muted = true;
-      video.volume = 1;
+      video.volume = volume;
 
       video.removeAttribute("src");
       video.src = "";
@@ -116,9 +116,8 @@ const VideoPlayer = ({
       
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
   setLoading(false);
-  video.muted = true; // 👈 প্রথমবার ট্রু করে দিন, অথবা ইউজারকে 'Click to Play' বাটন দেখান
- // setMuted(false); 
-        video.play();
+  video.muted = muted; // 👈 প্রথমবার ট্রু করে দিন, অথবা ইউজারকে 'Click to Play' বাটন দেখান
+
   video.play().catch(() => {});
 });
 
