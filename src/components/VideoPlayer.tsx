@@ -133,6 +133,9 @@ const VideoPlayer = ({
       setIsPlaying(false);
       setShowControls(true);
       if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+      
+      // ⚠️ ফিক্স: যখন কোনো কারণে ভিডিও পজ হবে, তখন ব্যাকগ্রাউন্ডের অডিও মিউট বা রিলিজ করে দেওয়া
+      v.muted = true;
     };
     const updateTimes = () => {
       setCurrentTime(v.currentTime);
@@ -158,7 +161,7 @@ const VideoPlayer = ({
       v.removeEventListener("progress", updateTimes);
       v.removeEventListener("loadedmetadata", updateTimes);
     };
-  }, []);
+  }, [muted]); // ⚠️ muted ডিপেন্ডেন্সি দেওয়া হয়েছে সঠিক ট্র্যাকিং এর জন্য
 
   // Fullscreen / PiP listeners
   useEffect(() => {
@@ -176,11 +179,18 @@ const VideoPlayer = ({
     };
   }, []);
 
+  // ⚠️ ফিক্সড প্লে/পজ হ্যান্ডলার
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) v.play().catch(() => {});
-    else v.pause();
+    if (v.paused) {
+      // প্লে করার সময় আগের কাস্টম মিউট স্টেট ফিরিয়ে আনা
+      v.muted = muted;
+      v.play().catch(() => {});
+    } else {
+      v.pause();
+      v.muted = true; // পজ করার সাথে সাথে অডিও পুরোপুরি লক করে দেওয়া
+    }
   };
 
   const toggleMute = () => {
@@ -228,7 +238,6 @@ const VideoPlayer = ({
     setShowControls(true);
     scheduleHide();
   };
-
 
   return (
     <div
@@ -367,36 +376,35 @@ const VideoPlayer = ({
           </div>
         )}
         <div className="flex items-center gap-3">
-
-        <button onClick={togglePlay} className="text-foreground hover:text-primary transition" aria-label={isPlaying ? "Pause" : "Play"}>
-          {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-        </button>
-        <button onClick={onPrev} disabled={!hasPrev} className="text-foreground hover:text-primary transition disabled:opacity-30" aria-label="পূর্ববর্তী">
-          <SkipBack className="h-5 w-5" />
-        </button>
-        <button onClick={onNext} disabled={!hasNext} className="text-foreground hover:text-primary transition disabled:opacity-30" aria-label="পরবর্তী">
-          <SkipForward className="h-5 w-5" />
-        </button>
-        <button onClick={toggleMute} className="text-foreground hover:text-primary transition" aria-label={muted ? "Unmute" : "Mute"}>
-          {muted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-        </button>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.05}
-          value={muted ? 0 : volume}
-          onChange={(e) => changeVolume(parseFloat(e.target.value))}
-          className="hidden sm:block w-20 accent-primary"
-          aria-label="ভলিউম"
-        />
-        <div className="flex-1" />
-        <button onClick={togglePip} className="text-foreground hover:text-primary transition" aria-label="Floating player">
-          <PictureInPicture2 className={`h-5 w-5 ${isPip ? "text-primary" : ""}`} />
-        </button>
-        <button onClick={toggleFullscreen} className="text-foreground hover:text-primary transition" aria-label="Fullscreen">
-          {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-        </button>
+          <button onClick={togglePlay} className="text-foreground hover:text-primary transition" aria-label={isPlaying ? "Pause" : "Play"}>
+            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+          </button>
+          <button onClick={onPrev} disabled={!hasPrev} className="text-foreground hover:text-primary transition disabled:opacity-30" aria-label="পূর্ববর্তী">
+            <SkipBack className="h-5 w-5" />
+          </button>
+          <button onClick={onNext} disabled={!hasNext} className="text-foreground hover:text-primary transition disabled:opacity-30" aria-label="পরবর্তী">
+            <SkipForward className="h-5 w-5" />
+          </button>
+          <button onClick={toggleMute} className="text-foreground hover:text-primary transition" aria-label={muted ? "Unmute" : "Mute"}>
+            {muted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={muted ? 0 : volume}
+            onChange={(e) => changeVolume(parseFloat(e.target.value))}
+            className="hidden sm:block w-20 accent-primary"
+            aria-label="ভলিউম"
+          />
+          <div className="flex-1" />
+          <button onClick={togglePip} className="text-foreground hover:text-primary transition" aria-label="Floating player">
+            <PictureInPicture2 className={`h-5 w-5 ${isPip ? "text-primary" : ""}`} />
+          </button>
+          <button onClick={toggleFullscreen} className="text-foreground hover:text-primary transition" aria-label="Fullscreen">
+            {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+          </button>
         </div>
       </div>
     </div>
@@ -404,3 +412,4 @@ const VideoPlayer = ({
 };
 
 export default VideoPlayer;
+  
