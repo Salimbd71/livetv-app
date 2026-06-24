@@ -119,7 +119,7 @@ const VideoPlayer = ({
   
   video.muted = false; // 👈 প্রথমবার ট্রু করে দিন, অথবা ইউজারকে 'Click to Play' বাটন দেখান
   video.volume = volume; // new add
-  destroyPlayer();
+ // destroyPlayer();
   video.play().catch(() => {});
 });
 
