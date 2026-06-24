@@ -232,7 +232,7 @@ const Index = () => {
             )}
             {searchBar}
             <CategoryFilter categories={categories} active={activeCategory} onSelect={setActiveCategory} />
-            {channelGrid(selectedChannel ? "grid-cols-3" : "grid-cols-4 md:grid-cols-5")}
+            {channelGrid(selectedChannel ? "grid-cols-5" : "grid-cols-4 md:grid-cols-5")}
           </div>
         </div>
 
