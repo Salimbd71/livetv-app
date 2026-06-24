@@ -13,7 +13,7 @@ const Navbar = () => {
       const y = window.scrollY;
 
       if (y > lastY.current && y > 60) {
-        setHidden(true);
+        setHidden(false);
       } else {
         setHidden(false);
       }
