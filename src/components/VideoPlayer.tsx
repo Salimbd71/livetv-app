@@ -79,7 +79,7 @@ const VideoPlayer = ({
       video.pause();
 
       video.muted = true;
-      video.volume = 0;
+      video.volume = volume;
 
       video.removeAttribute("src");
       video.src = "";
@@ -118,7 +118,7 @@ const VideoPlayer = ({
   setLoading(false);
   
   video.muted = false; // 👈 প্রথমবার ট্রু করে দিন, অথবা ইউজারকে 'Click to Play' বাটন দেখান
-  video.volume = volume; // new add
+  video.volume = 0; // new add
  // destroyPlayer();
   video.play().catch(() => {});
 });
