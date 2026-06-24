@@ -115,10 +115,13 @@ const VideoPlayer = ({
       hls.attachMedia(video);
       
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        setLoading(false);
-        video.muted = muted; // আগের সিলেক্টেড মিউট স্টেট
-        video.play().catch(() => {});
-      });
+  setLoading(false);
+  // ⚠️ ফিক্স: প্রথমবার প্লে হওয়ার সময় সরাসরি স্টেটের ভ্যালু রিড না করে ইনিশিয়াল ভ্যালু পুশ করা
+  video.muted = false; 
+  video.volume = 1; 
+  video.play().catch(() => {});
+});
+
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
 
@@ -158,7 +161,10 @@ const VideoPlayer = ({
 
   // ১. ইউআরএল চেঞ্জ ট্র্যাকিং এবং মেমোরি রিলিজ
   useEffect(() => {
-    loadStream(url);
+
+
+
+    
     return () => {
       destroyPlayer(); // প্লেয়ার ক্লোজ বা চ্যানেল চেঞ্জ হলে ওল্ড মিউজিক ডেড হবে
     };
