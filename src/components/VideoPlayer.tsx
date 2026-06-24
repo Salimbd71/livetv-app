@@ -54,18 +54,42 @@ const VideoPlayer = ({
 
   // ⚠️ মেমোরি থেকে পুরাতন সমস্ত স্ট্রিম এবং অডিও ট্র্যাকিং ডিলিট করার মাস্টার ফাংশন
   const destroyPlayer = () => {
-    if (hlsRef.current) {
+
+  if (hideTimerRef.current) {
+    clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = null;
+  }
+
+  if (hlsRef.current) {
+    try {
+      hlsRef.current.stopLoad();
       hlsRef.current.detachMedia();
       hlsRef.current.destroy();
-      hlsRef.current = null;
+    } catch (e) {
+      console.error(e);
     }
-    const video = videoRef.current;
-    if (video) {
+
+    hlsRef.current = null;
+  }
+
+  const video = videoRef.current;
+
+  if (video) {
+    try {
       video.pause();
+
+      video.muted = true;
+      video.volume = 0;
+
       video.removeAttribute("src");
-      video.load(); // ব্রাউজার মেমোরির বাফার খালি করার জন্য
+      video.src = "";
+
+      video.load();
+    } catch (e) {
+      console.error(e);
     }
-  };
+  }
+};
 
   const loadStream = (u: string) => {
     const video = videoRef.current;
@@ -96,12 +120,29 @@ const VideoPlayer = ({
         video.play().catch(() => {});
       });
 
-      hls.on(Hls.Events.ERROR, (_e, data) => {
-        if (data.fatal) {
-          setLoading(false);
-          setError("এই চ্যানেল এখন প্লে হচ্ছে না।");
-        }
-      });
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+
+  if (!data.fatal) return;
+
+  switch (data.type) {
+
+    case Hls.ErrorTypes.NETWORK_ERROR:
+      console.log("Recovering network error");
+      hls.startLoad();
+      break;
+
+    case Hls.ErrorTypes.MEDIA_ERROR:
+      console.log("Recovering media error");
+      hls.recoverMediaError();
+      break;
+
+    default:
+      destroyPlayer();
+      setLoading(false);
+      setError("এই চ্যানেল এখন প্লে হচ্ছে না।");
+      break;
+  }
+});
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = u;
       video.addEventListener("loadedmetadata", () => {
@@ -170,29 +211,55 @@ const VideoPlayer = ({
 
   // ফুলস্ক্রিন ট্র্যাকিং
   useEffect(() => {
-    const fs = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", fs);
-    return () => document.removeEventListener("fullscreenchange", fs);
-  }, []);
+
+  loadStream(url);
+
+  return () => {
+
+    destroyPlayer();
+
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+
+  };
+
+}, [url]);
 
   // ⚠️ ৩. মাস্টার প্লে/পজ লজিক (যা অডিও বাফারকে জিরো করে দেয়)
-  const togglePlay = () => {
-    const v = videoRef.current;
-    if (!v) return;
+  const togglePlay = async () => {
 
-    if (isPlaying) {
-      v.pause();
-      v.muted = true; // মেমোরি কনটেক্সট লেভেলে অডিও লক
+  const video = videoRef.current;
+
+  if (!video) return;
+
+  try {
+
+    if (!video.paused) {
+
+      video.pause();
+
+      video.muted = true;
+
       setIsPlaying(false);
+
     } else {
-      v.muted = muted;
-      v.play()
-        .then(() => {
-          setIsPlaying(true);
-        })
-        .catch(() => {});
+
+      video.muted = muted;
+      video.volume = volume;
+
+      await video.play();
+
+      setIsPlaying(true);
+
+      scheduleHide();
     }
-  };
+
+  } catch (e) {
+    console.error(e);
+  }
+};
 
   const toggleMute = () => {
     const v = videoRef.current;
