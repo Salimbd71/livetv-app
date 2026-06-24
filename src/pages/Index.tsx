@@ -1,7 +1,6 @@
-import { useState, useMemo, useCallback, useEffect } from "react"; // ⚠️ useEffect যোগ করা হয়েছে
-import { useSearchParams } from "react-router-dom"; // ⚠️ useSearchParams যোগ করা হয়েছে
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Search, X } from "lucide-react";
-// ⚠️ Navbar ইমপোর্ট রিমুভ করা হয়েছে (MainLayout-এ আছে)
 import VideoPlayer from "@/components/VideoPlayer";
 import ChannelCard from "@/components/ChannelCard";
 import CategoryFilter from "@/components/CategoryFilter";
@@ -40,11 +39,8 @@ const Index = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
-
-  // ⚠️ URL থেকে কুয়েরি প্যারামিটার রিড করার জন্য
   const [searchParams] = useSearchParams();
 
-  // ⚠️ URL-এ ক্যাটাগরি চেঞ্জ হলে বা ক্যাটাগরি পেজ থেকে আসলে তা ট্র্যাক করার জন্য
   useEffect(() => {
     const catParam = searchParams.get("category");
     if (catParam && categories.includes(catParam)) {
@@ -151,7 +147,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ⚠️ এখানে থাকা <Navbar /> সফলভাবে রিমুভড */}
       <main className="container py-4">
         
         {/* ─── DESKTOP MODE ─── */}
@@ -159,8 +154,7 @@ const Index = () => {
           {!selectedChannel ? (
             /* ১. হোম স্ক্রিন (৩-কলাম লেআউট) */
             <div className="grid grid-cols-12 gap-5 items-start">
-              {/* LEFT: Scrollable Vertical Category */}
-              <aside className="col-span-2 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto pr-1">
+              <aside className="col-span-2 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto pr-1">
                 <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Categories</h3>
                 <CategoryFilter
                   categories={categories}
@@ -170,20 +164,17 @@ const Index = () => {
                 />
               </aside>
 
-              {/* MIDDLE: Hero Img + Grid */}
               <section className="col-span-8 space-y-4">
                 <div className="relative w-full overflow-hidden rounded-xl border border-border animate-slide-up">
                   <img src={heroBanner} alt="Live TV" className="w-full h-auto object-cover" />
                 </div>
-                
                 <div className="space-y-3 pt-2">
                   {searchBar}
                   {channelGrid("grid-cols-3 xl:grid-cols-4")}
                 </div>
               </section>
 
-              {/* RIGHT: Featured Random Channels */}
-              <aside className="col-span-2 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto pl-1">
+              <aside className="col-span-2 sticky top-16 max-h-[calc(100vh-5rem)] overflow-y-auto pl-1">
                 <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Featured</h3>
                 <div className="grid grid-cols-1 gap-2">
                   {featuredChannels.map((channel, i) => (
@@ -202,13 +193,14 @@ const Index = () => {
               </aside>
             </div>
           ) : (
-            /* ২. প্লেয়ার স্ক্রিন (২-কলাম লেআউট) */
+            /* ২. প্লেয়ার স্ক্রিন (২-কলাম ফিক্সড লেআউট) ⚠️ ফিক্সড করা হয়েছে */
             <div className="grid grid-cols-12 gap-5 items-start">
-              <section className="col-span-8 sticky top-4">
+              {/* প্লেয়ার এখন স্ক্রিনের সাথে একদম ফিক্সড থাকবে */}
+              <section className="col-span-8 sticky top-16">
                 {playerSection}
               </section>
 
-              <aside className="col-span-4 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto pr-1 space-y-4">
+              <aside className="col-span-4 max-h-[calc(100vh-2rem)] overflow-y-auto pr-1 space-y-4">
                 {searchBar}
                 <CategoryFilter
                   categories={categories}
@@ -232,7 +224,12 @@ const Index = () => {
           )}
 
           <div className="space-y-3">
-            {selectedChannel && playerSection}
+            {/* মোবাইল মোডে প্লেয়ার ওপরে ফিক্সড রাখার জন্য sticky টপ ক্লাস */}
+            {selectedChannel && (
+              <div className="sticky top-14 z-50 bg-background pb-2">
+                {playerSection}
+              </div>
+            )}
             {searchBar}
             <CategoryFilter categories={categories} active={activeCategory} onSelect={setActiveCategory} />
             {channelGrid(selectedChannel ? "grid-cols-3" : "grid-cols-4 md:grid-cols-5")}
@@ -245,4 +242,4 @@ const Index = () => {
 };
 
 export default Index;
-              
+            
