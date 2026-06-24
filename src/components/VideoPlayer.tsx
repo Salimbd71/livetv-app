@@ -92,17 +92,15 @@ const VideoPlayer = ({
 };
 
   const loadStream = (u: string) => {
-  const video = videoRef.current;
-  if (!video) return;
+    const video = videoRef.current;
+    if (!video) return;
 
-  destroyPlayer();
-
-  setError(null);
-  setLoading(true);
-  setIsPlaying(false); // ⚠️ important fix (NOT true)
-
-  video.muted = muted;
-  video.volume = volume;
+    // নতুন কিছু লোড করার আগে পুরানো সব ট্রাফিকের অডিও-ভিডিও ধ্বংস করি
+    destroyPlayer();
+    
+    setError(null);
+    setLoading(true);
+    setIsPlaying(true);
 
     if (Hls.isSupported()) {
       const hls = new Hls({
@@ -117,30 +115,10 @@ const VideoPlayer = ({
       hls.attachMedia(video);
       
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-  setLoading(false);
-
-  const video = videoRef.current;
-  if (!video) return;
-
-  // ⚠️ প্রথম play audio fix
-  video.muted = muted;
-  video.volume = volume;
-
-  const playPromise = video.play();
-
-  if (playPromise !== undefined) {
-    playPromise
-      .then(() => {
-        setIsPlaying(true);
-      })
-      .catch((err) => {
-        console.log("Auto play blocked:", err);
-
-        // fallback fix (important for mobile)
-        setIsPlaying(false);
+        setLoading(false);
+        video.muted = muted; // আগের সিলেক্টেড মিউট স্টেট
+        video.play().catch(() => {});
       });
-  }
-});
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
 
