@@ -162,7 +162,7 @@ const VideoPlayer = ({
   // ১. ইউআরএল চেঞ্জ ট্র্যাকিং এবং মেমোরি রিলিজ
   useEffect(() => {
 
-loadStream(url);
+
 
     
     return () => {
