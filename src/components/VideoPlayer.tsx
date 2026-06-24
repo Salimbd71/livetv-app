@@ -79,7 +79,7 @@ const VideoPlayer = ({
       video.pause();
 
       video.muted = true;
-      video.volume = volume;
+      video.volume = 0;
 
       video.removeAttribute("src");
       video.src = "";
@@ -245,7 +245,7 @@ const VideoPlayer = ({
       video.pause();
 
       video.muted = true;
-
+      video.volume = volume; // new add
       setIsPlaying(false);
 
     } else {
