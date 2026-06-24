@@ -214,25 +214,26 @@ const VideoPlayer = ({
 
   // ⚠️ ৪. কাস্টম প্লে/পজ লজিক
   const togglePlay = async () => {
-    const video = videoRef.current;
-    if (!video) return;
+  const video = videoRef.current;
+  if (!video) return;
 
-    try {
-      if (!video.paused) {
-        video.pause();
-        video.muted = true; // অডিও ট্র্যাকিং অফ করার জন্য
-        setIsPlaying(false);
-      } else {
-        video.muted = muted;
-        video.volume = volume;
-        await video.play();
-        setIsPlaying(true);
-        scheduleHide();
-      }
-    } catch (e) {
-      console.error(e);
+  try {
+    if (!video.paused) {
+      video.pause();
+      setIsPlaying(false);
+    } else {
+      video.muted = muted;
+      video.volume = volume;
+
+      await video.play();
+
+      setIsPlaying(true);
+      scheduleHide();
     }
-  };
+  } catch (e) {
+    console.error(e);
+  }
+};
 
   const toggleMute = () => {
     const v = videoRef.current;
