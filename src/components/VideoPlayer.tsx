@@ -162,7 +162,7 @@ const VideoPlayer = ({
   // ১. ইউআরএল চেঞ্জ ট্র্যাকিং এবং মেমোরি রিলিজ
   useEffect(() => {
 
-
+loadStream(url);
 
     
     return () => {
@@ -216,22 +216,14 @@ const VideoPlayer = ({
   }, []);
 
   // ফুলস্ক্রিন ট্র্যাকিং
+    // সঠিক ফুলস্ক্রিন ট্র্যাকিং (এখানে কোনো loadStream থাকবে না)
   useEffect(() => {
-
-  loadStream(url);
-
-  return () => {
-
-    destroyPlayer();
-
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-
-  };
-
-}, [url]);
+    const fs = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", fs);
+    return () => {
+      document.removeEventListener("fullscreenchange", fs);
+    };
+  }, []);
 
   // ⚠️ ৩. মাস্টার প্লে/পজ লজিক (যা অডিও বাফারকে জিরো করে দেয়)
   const togglePlay = async () => {
