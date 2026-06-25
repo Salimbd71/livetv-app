@@ -1,4 +1,52 @@
 [
+     {
+    "name": "TVRI sport",
+    "logo": "https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png",
+    "category": "FIFA Live",
+    "url": "http://103.148.44.38:8000/play/a05u/index.m3u8"
+  },
+  {
+    "name": "Btv",
+    "logo": "https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png",
+    "category": "FIFA Live",
+    "url": "http://198.195.239.50:8095/btv/tracks-v1a1/mono.m3u8"
+  },
+  {
+    "name": "TNS 1",
+    "logo": "https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png",
+    "category": "FIFA Live",
+    "url": "http://s.rocketdns.info:8080/live/monstercable/Dq6jjknxCr/3146.ts"
+  },
+  {
+    "name": "TNS 2",
+    "logo": "https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png",
+    "category": "FIFA Live",
+    "url": "http://s.rocketdns.info:8080/live/monstercable/Dq6jjknxCr/3145.ts"
+  },
+  {
+    "name": "Somoy",
+    "logo": "https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png",
+    "category": "FIFA Live",
+    "url": "https://live.thebosstv.com:30443/dwlive/Somoy-TV/chunks.m3u8"
+  },
+  {
+    "name": "Unite 8 Sports 1 HD",
+    "logo": "https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png",
+    "category": "FIFA Live",
+    "url": "http://starhub.pro/live/farhat-3379/67897-913379/741567.ts"
+  },
+  {
+    "name": "Unite 8 Sports 2 HD",
+    "logo": "https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png",
+    "category": "FIFA Live",
+    "url": "http://212.102.34.8:9080/AndFlixHD/video.m3u8"
+  },
+  {
+    "name": "TVP Sports",
+    "logo": "https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png",
+    "category": "FIFA Live",
+    "url": "https://1nyaler.streamhostingcdn.top/stream/89/index.m3u8"
+  },
 {
     "name": "FIFA Live 1",
     "channel": "RTB Go",
