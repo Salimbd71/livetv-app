@@ -117,8 +117,8 @@ const VideoPlayer = ({
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
   setLoading(false);
   
-  video.muted = false; // 👈 প্রথমবার ট্রু করে দিন, অথবা ইউজারকে 'Click to Play' বাটন দেখান
-  video.volume = 0; // new add
+  video.muted = muted; // 👈 প্রথমবার ট্রু করে দিন, অথবা ইউজারকে 'Click to Play' বাটন দেখান
+  video.volume = volume; // new add
  // destroyPlayer();
   video.play().catch(() => {});
 });
@@ -214,22 +214,7 @@ const VideoPlayer = ({
   }, []);
 
   // ফুলস্ক্রিন ট্র্যাকিং
-  useEffect(() => {
-
-  loadStream(url);
-
-  return () => {
-
-    destroyPlayer();
-
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-
-  };
-
-}, [url]);
+  
 
   // ⚠️ ৩. মাস্টার প্লে/পজ লজিক (যা অডিও বাফারকে জিরো করে দেয়)
   const togglePlay = async () => {
