@@ -169,15 +169,6 @@ const VideoPlayer = ({
     };
   }, [url]);
 
-
-  // ১. ইউআরএল চেঞ্জ ট্র্যাকিং এবং মেমোরি রিলিজ
-  useEffect(() => {
-    loadStream(url);
-    return () => {
-      destroyPlayer(); 
-    };
-  }, [url]);
-
   const scheduleHide = () => {
     if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
     hideTimerRef.current = window.setTimeout(() => setShowControls(false), 3000);
