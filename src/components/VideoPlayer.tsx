@@ -85,11 +85,11 @@ const VideoPlayer = ({
     }
   };
 
-  const loadStream = (u: string) => {
+    const loadStream = (u: string) => {
     const video = videoRef.current;
     if (!video) return;
 
-    // নতুন কিছু লোড করার আগে পুরানো সব ট্রাফিকের অডিও-ভিডিও ধ্বংস করি
+    // ১. নতুন কিছু করার আগে রানিং সব প্লেয়ার এবং কানেকশন পুরোপুরি ধ্বংস করি
     destroyPlayer();
     
     setError(null);
@@ -97,13 +97,19 @@ const VideoPlayer = ({
     setIsPlaying(true);
 
     if (Hls.isSupported()) {
+      // ২. ডাবল তৈরি হওয়া ঠেকাতে পুরাতন hls অবজেক্ট ডিলিট করা নিশ্চিত করা
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+      }
+
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
         backBufferLength: 0, 
-        maxBufferLength: 5,  
-        maxMaxBufferLength: 10,
+        maxBufferLength: 3,  // বাফার আরও কমিয়ে দেওয়া হলো যাতে ইকো না জমে
+        maxMaxBufferLength: 5,
       });
+      
       hlsRef.current = hls;
       hls.loadSource(u);
       hls.attachMedia(video);
@@ -111,19 +117,21 @@ const VideoPlayer = ({
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setLoading(false);
         video.muted = muted; 
-        video.volume = volume; // ভলিউম সিঙ্ক
-        video.play().catch(() => {});
+        video.volume = volume; 
+        
+        // ৩. প্লে করার আগে নিশ্চিত হওয়া যে এটি ডাবল রিকোয়েস্ট ট্রিপ করছে না
+        video.play().catch((err) => {
+          console.log("Autoplay blocked or interrupted:", err);
+        });
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (!data.fatal) return;
         switch (data.type) {
           case Hls.ErrorTypes.NETWORK_ERROR:
-            console.log("Recovering network error");
             hls.startLoad();
             break;
           case Hls.ErrorTypes.MEDIA_ERROR:
-            console.log("Recovering media error");
             hls.recoverMediaError();
             break;
           default:
@@ -138,7 +146,7 @@ const VideoPlayer = ({
       video.addEventListener("loadedmetadata", () => {
         setLoading(false);
         video.muted = muted;
-        video.volume = volume; // সাফারি বা আইফোনের জন্য ভলিউম সিঙ্ক
+        video.volume = volume;
         video.play().catch(() => {});
       });
     } else {
@@ -146,6 +154,21 @@ const VideoPlayer = ({
       setLoading(false);
     }
   };
+
+  // ১. ইউআরএল চেঞ্জ ট্র্যাকিং এবং মেমোরি রিলিজ (Strict Mode Safe)
+  useEffect(() => {
+    let isMounted = true;
+
+    if (isMounted) {
+      loadStream(url);
+    }
+
+    return () => {
+      isMounted = false;
+      destroyPlayer(); // পেজ থেকে চলে গেলে বা চ্যানেল চেঞ্জ হলে ওল্ড অডিও ১০০% ডেড হবে
+    };
+  }, [url]);
+
 
   // ১. ইউআরএল চেঞ্জ ট্র্যাকিং এবং মেমোরি রিলিজ
   useEffect(() => {
