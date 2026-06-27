@@ -54,42 +54,36 @@ const VideoPlayer = ({
 
   // ⚠️ মেমোরি থেকে পুরাতন সমস্ত স্ট্রিম এবং অডিও ট্র্যাকিং ডিলিট করার মাস্টার ফাংশন
   const destroyPlayer = () => {
-
-  if (hideTimerRef.current) {
-    clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = null;
-  }
-
-  if (hlsRef.current) {
-    try {
-      hlsRef.current.stopLoad();
-      hlsRef.current.detachMedia();
-      hlsRef.current.destroy();
-    } catch (e) {
-      console.error(e);
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
     }
 
-    hlsRef.current = null;
-  }
-
-  const video = videoRef.current;
-
-  if (video) {
-    try {
-      video.pause();
-
-      video.muted = true;
-      video.volume = 0;
-
-      video.removeAttribute("src");
-      video.src = "";
-
-      video.load();
-    } catch (e) {
-      console.error(e);
+    if (hlsRef.current) {
+      try {
+        hlsRef.current.stopLoad();
+        hlsRef.current.detachMedia();
+        hlsRef.current.destroy();
+      } catch (e) {
+        console.error(e);
+      }
+      hlsRef.current = null;
     }
-  }
-};
+
+    const video = videoRef.current;
+    if (video) {
+      try {
+        video.pause();
+        video.muted = true;
+        video.volume = 0;
+        video.removeAttribute("src");
+        video.src = "";
+        video.load();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
 
   const loadStream = (u: string) => {
     const video = videoRef.current;
@@ -106,7 +100,7 @@ const VideoPlayer = ({
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 0, // ব্যাক বাফার ০ করা হলো যাতে পুরাতন অডিও মেমোরিতে না জমে
+        backBufferLength: 0, 
         maxBufferLength: 5,  
         maxMaxBufferLength: 10,
       });
@@ -115,43 +109,36 @@ const VideoPlayer = ({
       hls.attachMedia(video);
       
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-  setLoading(false);
-  
-  video.muted = muted; // 👈 প্রথমবার ট্রু করে দিন, অথবা ইউজারকে 'Click to Play' বাটন দেখান
-  video.volume = volume; // new add
- // destroyPlayer();
-  video.play().catch(() => {});
-});
-
+        setLoading(false);
+        video.muted = muted; 
+        video.volume = volume; // ভলিউম সিঙ্ক
+        video.play().catch(() => {});
+      });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
-
-  if (!data.fatal) return;
-
-  switch (data.type) {
-
-    case Hls.ErrorTypes.NETWORK_ERROR:
-      console.log("Recovering network error");
-      hls.startLoad();
-      break;
-
-    case Hls.ErrorTypes.MEDIA_ERROR:
-      console.log("Recovering media error");
-      hls.recoverMediaError();
-      break;
-
-    default:
-      destroyPlayer();
-      setLoading(false);
-      setError("এই চ্যানেল এখন প্লে হচ্ছে না।");
-      break;
-  }
-});
+        if (!data.fatal) return;
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            console.log("Recovering network error");
+            hls.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            console.log("Recovering media error");
+            hls.recoverMediaError();
+            break;
+          default:
+            destroyPlayer();
+            setLoading(false);
+            setError("এই চ্যানেল এখন প্লে হচ্ছে না।");
+            break;
+        }
+      });
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = u;
       video.addEventListener("loadedmetadata", () => {
         setLoading(false);
         video.muted = muted;
+        video.volume = volume; // সাফারি বা আইফোনের জন্য ভলিউম সিঙ্ক
         video.play().catch(() => {});
       });
     } else {
@@ -164,7 +151,7 @@ const VideoPlayer = ({
   useEffect(() => {
     loadStream(url);
     return () => {
-      destroyPlayer(); // প্লেয়ার ক্লোজ বা চ্যানেল চেঞ্জ হলে ওল্ড মিউজিক ডেড হবে
+      destroyPlayer(); 
     };
   }, [url]);
 
@@ -173,7 +160,7 @@ const VideoPlayer = ({
     hideTimerRef.current = window.setTimeout(() => setShowControls(false), 3000);
   };
 
-  // ২. রিঅ্যাক্ট ইভেন্ট লিসেনার সিঙ্ক (ডাবল অডিও প্রোটেকশন)
+  // ২. রিঅ্যাক্ট ইভেন্ট লিসেনার সিঙ্ক
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -200,55 +187,45 @@ const VideoPlayer = ({
       }
     };
 
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
     v.addEventListener("play", onPlay);
     v.addEventListener("pause", onPause);
     v.addEventListener("playing", onPlay);
     v.addEventListener("timeupdate", updateTimes);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
 
     return () => {
       v.removeEventListener("play", onPlay);
       v.removeEventListener("pause", onPause);
       v.removeEventListener("playing", onPlay);
       v.removeEventListener("timeupdate", updateTimes);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
 
-  // ফুলস্ক্রিন ট্র্যাকিং
-  
-
-  // ⚠️ ৩. মাস্টার প্লে/পজ লজিক (যা অডিও বাফারকে জিরো করে দেয়)
+  // ⚠️ ৩. মাস্টার প্লে/পজ লজিক (ফিক্সড)
   const togglePlay = async () => {
+    const video = videoRef.current;
+    if (!video) return;
 
-  const video = videoRef.current;
-
-  if (!video) return;
-
-  try {
-
-    if (!video.paused) {
-
-      video.pause();
-
-      video.muted = true;
-      video.volume = volume; // new add
-      setIsPlaying(false);
-
-    } else {
-
-      video.muted = muted;
-      video.volume = volume;
-
-      await video.play();
-
-      setIsPlaying(true);
-
-      scheduleHide();
+    try {
+      if (!video.paused) {
+        video.pause();
+        setIsPlaying(false);
+      } {
+        video.muted = muted;
+        video.volume = volume;
+        await video.play();
+        setIsPlaying(true);
+        scheduleHide();
+      }
+    } catch (e) {
+      console.error(e);
     }
-
-  } catch (e) {
-    console.error(e);
-  }
-};
+  };
 
   const toggleMute = () => {
     const v = videoRef.current;
@@ -283,8 +260,10 @@ const VideoPlayer = ({
     try {
       if (document.pictureInPictureElement) {
         await document.exitPictureInPicture();
+        setIsPip(false);
       } else if (document.pictureInPictureEnabled) {
         await v.requestPictureInPicture();
+        setIsPip(true);
       }
     } catch { /* noop */ }
   };
@@ -301,7 +280,6 @@ const VideoPlayer = ({
         onClick={togglePlay}
         className="h-full w-full object-contain bg-background"
         playsInline
-        autoPlay
       />
 
       {loading && (
@@ -383,3 +361,4 @@ const VideoPlayer = ({
 };
 
 export default VideoPlayer;
+        
