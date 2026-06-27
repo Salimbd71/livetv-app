@@ -84,9 +84,11 @@ const Index = () => {
   const idx = selectedChannel ? filtered.findIndex((c) => c.url === selectedChannel.url) : -1;
   const hasPrev = idx > 0;
   const hasNext = idx >= 0 && idx < filtered.length - 1;
-
-  const playerSection = selectedChannel && (
+  
+// Player section 
+    const playerSection = selectedChannel && (
     <VideoPlayer
+      key={selectedChannel.url} // 👈 এই ম্যাজিক লাইনটি রিঅ্যাক্টকে বাধ্য করবে পুরাতন প্লেয়ার ধ্বংস করে নতুন প্লেয়ার রেন্ডার করতে
       url={selectedChannel.url}
       name={selectedChannel.channel || selectedChannel.name}
       logo={selectedChannel.logo}
@@ -97,6 +99,7 @@ const Index = () => {
       hasNext={hasNext}
     />
   );
+  
 
   const searchBar = (
     <div className="flex items-center gap-3">
