@@ -59,6 +59,7 @@ const VideoPlayer = ({
       hideTimerRef.current = null;
     }
 
+    // হ্লস অবজেক্টকে ডেস্ট্রয় করার আগে তার মিডিয়া এটাচমেন্ট রিমুভ করা
     if (hlsRef.current) {
       try {
         hlsRef.current.stopLoad();
@@ -74,29 +75,42 @@ const VideoPlayer = ({
     if (video) {
       try {
         video.pause();
+        
+        // ⚡ [ম্যাজিক লাইন] ভিডিওর ভেতরের সব অডিও-ভিডিও সোর্স ট্র্যাক ফোর্সড স্টপ করা
+        if (video.srcObject instanceof MediaStream) {
+          video.srcObject.getTracks().forEach(track => track.stop());
+          video.srcObject = null;
+        }
+
         video.muted = true;
         video.volume = 0;
         video.removeAttribute("src");
-        video.src = "";
-        video.load();
+        video.load(); // ভিডিও ইঞ্জিন সম্পূর্ণ রিসেট করা
       } catch (e) {
         console.error(e);
       }
     }
   };
+  
 
-    const loadStream = (u: string) => {
+  
+      const loadStream = (u: string) => {
     const video = videoRef.current;
     if (!video) return;
 
     // ১. নতুন কিছু করার আগে রানিং সব প্লেয়ার এবং কানেকশন পুরোপুরি ধ্বংস করি
     destroyPlayer();
     
+    // ⚡ [নতুন অ্যাড] ব্রাউজারে যদি ওল্ড কোনো ঘোস্ট অডিও ঝুলে থাকে তাকে ম্যানুয়ালি মুছে দেওয়া
+    video.src = ""; 
+    
     setError(null);
     setLoading(true);
     setIsPlaying(true);
 
     if (Hls.isSupported()) {
+      // বাকি কোড আগের মতোই থাকবে...
+      
       // ২. ডাবল তৈরি হওয়া ঠেকাতে পুরাতন hls অবজেক্ট ডিলিট করা নিশ্চিত করা
       if (hlsRef.current) {
         hlsRef.current.destroy();
