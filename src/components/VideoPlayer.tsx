@@ -207,25 +207,28 @@ const VideoPlayer = ({
   }, []);
 
   // ⚠️ ৩. মাস্টার প্লে/পজ লজিক (ফিক্সড)
-  const togglePlay = async () => {
-    const video = videoRef.current;
-    if (!video) return;
 
-    try {
-      if (!video.paused) {
-        video.pause();
-        setIsPlaying(false);
-      } {
-        video.muted = muted;
-        video.volume = volume;
-        await video.play();
-        setIsPlaying(true);
-        scheduleHide();
-      }
-    } catch (e) {
-      console.error(e);
+const togglePlay = async () => {
+  const video = videoRef.current;
+  if (!video) return;
+
+  try {
+    if (!video.paused) {
+      // ভিডিও যদি চলতে থাকে, তবে পজ করো
+      video.pause();
+      setIsPlaying(false);
+    } else {
+      // ভিডিও যদি পজ থাকে, তবেই কেবল প্লে করো (else যোগ করা হয়েছে)
+      video.muted = muted;
+      video.volume = volume;
+      await video.play();
+      setIsPlaying(true);
+      scheduleHide();
     }
-  };
+  } catch (e) {
+    console.error("Play/Pause Error: ", e);
+  }
+};
 
   const toggleMute = () => {
     const v = videoRef.current;
