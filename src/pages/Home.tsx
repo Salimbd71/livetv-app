@@ -8,8 +8,8 @@ import { ChannelGrid } from "@/components/ChannelGrid";
 import { useGlobal } from "@/contexts/GlobalContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import channelsData from "@assets/channels_1782579511330.json";
-import placeholderImg from "@assets/placeholder_image_1782581749400.png";
+import channelsData from "@assets/channels.json";
+import placeholderImg from "@assets/placeholder.png";
 
 const getCategoryIcon = (cat: string) => {
   const cls = "w-4 h-4 shrink-0";
