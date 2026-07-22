@@ -1,46 +1,4 @@
 [
-{
-    "name": "FIFA Live 1",
-    "channel": "RTB Go",
-    "logo": "https://raw.githubusercontent.com/Salimtech353/LiveTV71/main/Channel/fifa.png",
-    "category": "FIFA Live",
-    "url": "https://d1211whpimeups.cloudfront.net/smil:rtbgo/playlist.m3u8"
-  },
-  {
-    "name": "FIFA Live 2",
-    "channel": "Bein Sport 1",
-    "logo": "https://raw.githubusercontent.com/Salimtech353/LiveTV71/main/Channel/fifa.png",
-    "category": "FIFA Live",
-    "url": "https://1nyaler.streamhostingcdn.top/stream/23/index.m3u8"
-  },
-  {
-    "name": "FIFA Live 3",
-    "channel": "Telemondu",
-    "logo": "https://raw.githubusercontent.com/Salimtech353/LiveTV71/main/Channel/fifa.png",
-    "category": "FIFA Live",
-    "url": "https://nbculocallive.akamaized.net/hls/live/2037499/puertorico/stream1/master.m3u8"
-  },
-  {
-    "name": "FIFA Live 4",
-    "channel": "FOX 5",
-    "logo": "https://raw.githubusercontent.com/Salimtech353/LiveTV71/main/Channel/fifa.png",
-    "category": "FIFA Live",
-    "url": "http://84.17.50.102/fox/index.m3u8"
-  },
-  {
-    "name": "FIFA Live 5",
-    "channel": "Somoy TV",
-    "logo": "https://raw.githubusercontent.com/Salimtech353/LiveTV71/main/Channel/fifa.png",
-    "category": "FIFA Live",
-    "url": "https://live.thebosstv.com:30443/dwlive/Somoy-TV/chunks.m3u8"
-  },
-  {
-    "name": "FIFA Live 6",
-    "channel": "Z Bangla Sonar",
-    "logo": "https://raw.githubusercontent.com/Salimtech353/LiveTV71/main/Channel/fifa.png",
-    "category": "FIFA Live",
-    "url": "https://d1g8wgjurz8via.cloudfront.net/bpk-tv/ColorsHD/default/Zeebanglahd.m3u8"
-  },
     {
         "name": "BTV",
         "logo": "https://ssl.com.bd/sites/default/files/BTV%20Logo%20Gallery.png",
