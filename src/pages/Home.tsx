@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
   Tv, Heart, Globe, PlayCircle, Radio, Compass, Music,
-  BookOpen, Baby, Star, Mic, ChevronLeft, ChevronRight
+  BookOpen, Baby, Star, Mic, ChevronLeft, ChevronRight, Loader2
 } from "lucide-react";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { ChannelGrid } from "@/components/ChannelGrid";
 import { useGlobal } from "@/contexts/GlobalContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import channelsData from "@assets/channels.json";
+import { useChannels } from "@/hooks/use-channels";
 import placeholderImg from "@assets/placeholder.png";
 
 const getCategoryIcon = (cat: string) => {
@@ -27,8 +27,6 @@ const getCategoryIcon = (cat: string) => {
   }
 };
 
-const ALL_CHANNELS = channelsData as any[];
-
 export default function Home() {
   const { activeChannel, setActiveChannel, favorites, toggleFavorite, searchQuery } = useGlobal();
   const { t } = useLanguage();
@@ -36,19 +34,22 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
+  // Dynamic channel data loading using custom hook
+  const { channels: ALL_CHANNELS = [], isLoading, error } = useChannels();
+
   // Precompute channel counts per category
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    ALL_CHANNELS.forEach(ch => {
+    (ALL_CHANNELS as any[]).forEach(ch => {
       if (ch.category) counts[ch.category] = (counts[ch.category] || 0) + 1;
     });
     return counts;
-  }, []);
+  }, [ALL_CHANNELS]);
 
   const categories = useMemo(() => {
-    const cats = new Set(ALL_CHANNELS.map(c => c.category).filter(Boolean));
+    const cats = new Set((ALL_CHANNELS as any[]).map(c => c.category).filter(Boolean));
     return Array.from(cats) as string[];
-  }, []);
+  }, [ALL_CHANNELS]);
 
   useEffect(() => {
     if (searchQuery) {
@@ -58,13 +59,13 @@ export default function Home() {
   }, [searchQuery]);
 
   const filteredChannels = useMemo(() => {
-    return ALL_CHANNELS.filter(ch => {
+    return (ALL_CHANNELS as any[]).filter(ch => {
       if (searchQuery && !ch.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (showFavoritesOnly && !favorites.includes(ch.name)) return false;
       if (activeCategory && ch.category !== activeCategory) return false;
       return true;
     });
-  }, [searchQuery, activeCategory, showFavoritesOnly, favorites]);
+  }, [ALL_CHANNELS, searchQuery, activeCategory, showFavoritesOnly, favorites]);
 
   // Prev / Next channel navigation
   const currentIndex = activeChannel
@@ -140,6 +141,23 @@ export default function Home() {
       </div>
     </div>
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100dvh-var(--navbar-h))] gap-2 text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <span className="text-sm font-medium">{t("Loading channels...") || "Loading channels..."}</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-var(--navbar-h))] p-4 text-center gap-2">
+        <p className="text-sm text-destructive font-medium">Failed to load channels.</p>
+      </div>
+    );
+  }
 
   // ── MOBILE layout ────────────────────────────────────────────────────────
   if (isMobile) {
@@ -340,4 +358,5 @@ function CategoryList({ categories, categoryCounts, totalCount, favCount, active
       })}
     </div>
   );
-}
+            }
+                    
