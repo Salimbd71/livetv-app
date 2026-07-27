@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { Switch, Route } from "wouter";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { GlobalProvider } from "@/contexts/GlobalContext";
 import { Navbar } from "@/components/Navbar";
-import SplashScreen from "@/components/SplashScreen";
+import { SplashScreen } from "@/components/SplashScreen"; // কার্লি ব্র্যাকেট { } দিয়ে Named Import করা হয়েছে
 import Home from "@/pages/Home";
 import AllCategory from "@/pages/AllCategory";
 import About from "@/pages/About";
@@ -38,45 +38,22 @@ function AppRoutes() {
   );
 }
 
-function App() {
+export default function App() {
   const [showSplash, setShowSplash] = useState(true);
-  const [fadeOut, setFadeOut] = useState(false);
-
-  useEffect(() => {
-    // ১.৫ সেকেন্ড পর ফেইড-আউট অ্যানিমেশন শুরু হবে
-    const timer = setTimeout(() => {
-      setFadeOut(true);
-    }, 1500);
-
-    // অ্যানিমেশন শেষ হওয়ার পর (৫০০ms) DOM থেকে SplashScreen রিমুভ হবে
-    const removeTimer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2000);
-
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(removeTimer);
-    };
-  }, []);
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <LanguageProvider>
         <GlobalProvider>
-          {showSplash && (
-            <div
-              className={`fixed inset-0 z-[9999] transition-opacity duration-500 ease-in-out ${
-                fadeOut ? "opacity-0 pointer-events-none" : "opacity-100"
-              }`}
-            >
-              <SplashScreen />
-            </div>
+          {/* SplashScreen-এর ১০০% লোডিং অ্যানিমেশন শেষ হলে onDone কল হবে এবং মূল অ্যাপ দেখাবে */}
+          {showSplash ? (
+            <SplashScreen onDone={() => setShowSplash(false)} />
+          ) : (
+            <AppRoutes />
           )}
-          <AppRoutes />
         </GlobalProvider>
       </LanguageProvider>
     </ThemeProvider>
   );
-}
-
-export default App;
+      }
+            
