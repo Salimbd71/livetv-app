@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { useLocation } from "wouter";
-import { Tv, Heart, Globe, PlayCircle, Radio, Compass, Music, BookOpen, Baby, Star, Mic, Play } from "lucide-react";
+import { Tv, Heart, Globe, PlayCircle, Radio, Compass, Music, BookOpen, Baby, Star, Mic, Play, Loader2 } from "lucide-react";
 import { useGlobal } from "@/contexts/GlobalContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import channelsData from "@assets/channels.json";
+import { useChannels } from "@/hooks/use-channels";
 import { motion } from "framer-motion";
 
 const getCategoryIcon = (cat: string) => {
@@ -28,20 +28,42 @@ export default function AllCategory() {
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
+  // useChannels হুক থেকে চ্যানেল ডেটা সংগ্রহ
+  const { channels = [], isLoading, error } = useChannels();
+
   const categories = useMemo(() => {
-    const cats = new Set((channelsData as any[]).map(c => c.category).filter(Boolean));
+    if (!channels || !Array.isArray(channels)) return [];
+    const cats = new Set((channels as any[]).map(c => c.category).filter(Boolean));
     return Array.from(cats) as string[];
-  }, []);
+  }, [channels]);
 
   const channelsForCategory = useMemo(() => {
-    if (!selectedCategory) return channelsData as any[];
-    return (channelsData as any[]).filter(c => c.category === selectedCategory);
-  }, [selectedCategory]);
+    if (!channels || !Array.isArray(channels)) return [];
+    if (!selectedCategory) return channels as any[];
+    return (channels as any[]).filter(c => c.category === selectedCategory);
+  }, [selectedCategory, channels]);
 
   const handleChannelClick = (ch: any) => {
     setActiveChannel(ch);
     setLocation("/");
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100dvh-var(--navbar-h))] gap-2 text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <span className="text-sm font-medium">{t("Loading channels...") || "Loading channels..."}</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-var(--navbar-h))] p-4 text-center gap-2">
+        <p className="text-sm text-destructive font-medium">Failed to load channels.</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -68,13 +90,13 @@ export default function AllCategory() {
             >
               <Tv className="w-5 h-5 shrink-0" />
               {t("All Channels")}
-              <span className="ml-auto text-xs text-muted-foreground">{(channelsData as any[]).length}</span>
+              <span className="ml-auto text-xs text-muted-foreground">{channels.length}</span>
             </button>
 
             <div className="h-px bg-border my-2" />
 
             {categories.map(cat => {
-              const count = (channelsData as any[]).filter(c => c.category === cat).length;
+              const count = channels.filter((c: any) => c.category === cat).length;
               const active = selectedCategory === cat;
               return (
                 <button
@@ -175,7 +197,7 @@ function CategoryChannelGrid({ channels, categoryLabel, favorites, onChannelClic
       <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3">
         {channels.map((ch, idx) => (
           <motion.button
-            key={ch.name + idx}
+            key={ch.id || (ch.name + idx)}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: Math.min(idx * 0.02, 0.4) }}
@@ -207,7 +229,7 @@ function CategoryChannelGrid({ channels, categoryLabel, favorites, onChannelClic
             {/* Info */}
             <div className="px-2 py-1.5">
               <p className="text-[10px] md:text-xs font-semibold leading-tight line-clamp-2 text-card-foreground">
-                {ch.name.trim()}
+                {ch.name?.trim()}
               </p>
               <div className="flex items-center gap-1 mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
@@ -221,4 +243,5 @@ function CategoryChannelGrid({ channels, categoryLabel, favorites, onChannelClic
       </div>
     </div>
   );
-}
+      }
+                  
