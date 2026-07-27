@@ -35,7 +35,7 @@ export default function Home() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   // Dynamic channel data loading using custom hook
-  const { Channels: ALL_CHANNELS = [], isLoading, error } = useChannels();
+  const { channels: ALL_CHANNELS = [], isLoading, error } = useChannels();
 
   // Precompute channel counts per category
   const categoryCounts = useMemo(() => {
