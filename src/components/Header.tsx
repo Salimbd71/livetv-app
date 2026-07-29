@@ -24,7 +24,7 @@ export function Header({ searchQuery, setSearchQuery }: HeaderProps) {
           </div>
           <div className="hidden sm:block">
             <h1 className="font-bold text-xl tracking-tight leading-none text-foreground">
-              LiveTV<span className="text-primary">71</span>
+              NetPlay<span className="text-primary">IPTV</span>
             </h1>
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">
               {t("Live TV Streaming")}
