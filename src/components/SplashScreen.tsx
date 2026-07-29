@@ -151,9 +151,9 @@ export function SplashScreen({ onDone }: SplashScreenProps) {
                 className="text-5xl tracking-wider"
                 style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900 }}
               >
-                <span className="text-white">Live</span>
-                <span style={{ color: "#e60000" }}>TV</span>
-                <span className="text-white/90">71</span>
+                <span className="text-white">Net</span>
+                <span style={{ color: "#e60000" }}>Play</span>
+                <span className="text-white/90">  IPTV</span>
               </div>
               <motion.p
                 className="text-xs tracking-[0.4em] uppercase mt-2 font-medium"
