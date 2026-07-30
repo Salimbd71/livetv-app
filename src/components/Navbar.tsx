@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Search, Moon, Sun, Globe, Menu, X, Home, LayoutGrid, Info, Phone, Heart, Tv } from "lucide-react";
+import { Search, Moon, Sun, Globe, Menu, X, Home, LayoutGrid, Info, Phone, Heart, Tv, Film } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -48,6 +48,7 @@ function SearchInput({ value, onChange, onClear, placeholder, testId }: SearchIn
 
 const navLinks = [
   { href: "/", icon: <Home className="w-5 h-5" />, labelKey: "Home" },
+  { href: "/movies", icon: <Film className="w-5 h-5" />, labelKey: "Movies" },
   { href: "/all-category", icon: <LayoutGrid className="w-5 h-5" />, labelKey: "All Category" },
   { href: "/about", icon: <Info className="w-5 h-5" />, labelKey: "About" },
   { href: "/contact", icon: <Phone className="w-5 h-5" />, labelKey: "Contact Us" },
@@ -81,7 +82,7 @@ export function Navbar() {
                   className="text-xl tracking-wide text-foreground font-bold"
                   style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900 }}
                 >
-                  Net<span className="text-primary">Play</span><span className="text-foreground/90">iptv</span>
+                  Net<span className="text-primary">Play</span><span className="text-foreground/90"> IPTV</span>
                 </div>
                 <div className="text-[9px] text-muted-foreground uppercase tracking-[0.15em] font-medium hidden sm:block">
                   {t("Live TV Streaming")}
@@ -174,7 +175,7 @@ export function Navbar() {
                     <Tv className="w-4 h-4 text-white" />
                   </div>
                   <span className="text-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-                    Net<span className="text-primary">Play</span>iptv
+                    Net<span className="text-primary">Play</span> IPTV
                   </span>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setMenuOpen(false)} className="rounded-full">
@@ -205,7 +206,7 @@ export function Navbar() {
               </nav>
 
               <div className="p-4 border-t border-border shrink-0">
-                <p className="text-xs text-muted-foreground text-center">NetPlay iptv · Free Live TV</p>
+                <p className="text-xs text-muted-foreground text-center">NetPlay IPTV · Free Live TV & Movies</p>
               </div>
             </motion.div>
           </>
