@@ -200,8 +200,8 @@ export default function Contact() {
           className="text-center text-xs text-muted-foreground mt-12"
         >
           {language === "en"
-            ? "LiveTV71 is a personal project. For stream issues, please try again later."
-            : "LiveTV71 একটি ব্যক্তিগত প্রকল্প। স্ট্রিম সমস্যার জন্য পরে আবার চেষ্টা করুন।"}
+            ? "NetPlay IPTV is a personal project. For stream issues, please try again later."
+            : "NetPlay IPTV একটি ব্যক্তিগত প্রকল্প। স্ট্রিম সমস্যার জন্য পরে আবার চেষ্টা করুন।"}
         </motion.p>
       </div>
     </div>
