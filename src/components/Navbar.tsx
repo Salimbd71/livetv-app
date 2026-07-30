@@ -81,7 +81,7 @@ export function Navbar() {
                   className="text-xl tracking-wide text-foreground font-bold"
                   style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 900 }}
                 >
-                  Live<span className="text-primary">TV</span><span className="text-foreground/90">71</span>
+                  Net<span className="text-primary">Play</span><span className="text-foreground/90">iptv</span>
                 </div>
                 <div className="text-[9px] text-muted-foreground uppercase tracking-[0.15em] font-medium hidden sm:block">
                   {t("Live TV Streaming")}
@@ -174,7 +174,7 @@ export function Navbar() {
                     <Tv className="w-4 h-4 text-white" />
                   </div>
                   <span className="text-lg font-bold" style={{ fontFamily: "'Orbitron', sans-serif" }}>
-                    Live<span className="text-primary">TV</span>71
+                    Net<span className="text-primary">Play</span>iptv
                   </span>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => setMenuOpen(false)} className="rounded-full">
@@ -205,7 +205,7 @@ export function Navbar() {
               </nav>
 
               <div className="p-4 border-t border-border shrink-0">
-                <p className="text-xs text-muted-foreground text-center">LiveTV71 · Free Live TV</p>
+                <p className="text-xs text-muted-foreground text-center">NetPlay iptv · Free Live TV</p>
               </div>
             </motion.div>
           </>
