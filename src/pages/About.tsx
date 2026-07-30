@@ -6,10 +6,10 @@ import { motion } from "framer-motion";
 const features = [
   {
     icon: <Tv className="w-6 h-6" />,
-    titleEn: "161+ Live Channels",
-    titleBn: "১৬১+ লাইভ চ্যানেল",
-    descEn: "Watch over 161 live TV channels from Bangladesh and around the world, including news, entertainment, sports, Islamic content, and more.",
-    descBn: "বাংলাদেশ ও বিশ্বের ১৬১টিরও বেশি লাইভ টিভি চ্যানেল দেখুন — সংবাদ, বিনোদন, খেলাধুলা, ইসলামিক বিষয়বস্তু এবং আরও অনেক কিছু।",
+    titleEn: "100+ Live Channels",
+    titleBn: "১০০+ লাইভ চ্যানেল",
+    descEn: "Watch over 100 live TV channels from Bangladesh and around the world, including news, entertainment, sports, Islamic content, and more.",
+    descBn: "বাংলাদেশ ও বিশ্বের ১০০টিরও বেশি লাইভ টিভি চ্যানেল দেখুন — সংবাদ, বিনোদন, খেলাধুলা, ইসলামিক বিষয়বস্তু এবং আরও অনেক কিছু।",
   },
   {
     icon: <Zap className="w-6 h-6" />,
@@ -71,8 +71,8 @@ const features = [
     icon: <Clock className="w-6 h-6" />,
     titleEn: "Always Free",
     titleBn: "সর্বদা বিনামূল্যে",
-    descEn: "LiveTV71 is completely free to use — no subscriptions, no sign-up required. Just open and watch.",
-    descBn: "LiveTV71 ব্যবহার সম্পূর্ণ বিনামূল্যে — কোনো সাবস্ক্রিপশন নেই, সাইন-আপের প্রয়োজন নেই। শুধু খুলুন এবং দেখুন।",
+    descEn: "NetPlay IPTV is completely free to use — no subscriptions, no sign-up required. Just open and watch.",
+    descBn: "NetPlay IPTV ব্যবহার সম্পূর্ণ বিনামূল্যে — কোনো সাবস্ক্রিপশন নেই, সাইন-আপের প্রয়োজন নেই। শুধু খুলুন এবং দেখুন।",
   },
 ];
 
@@ -95,15 +95,15 @@ export default function About() {
             </div>
             <h1 className="text-3xl md:text-5xl font-extrabold mb-4 tracking-tight">
               {language === "en" ? (
-                <>About <span className="text-primary">LiveTV71</span></>
+                <>About <span className="text-primary">NetPlay IPTV</span></>
               ) : (
-                <><span className="text-primary">LiveTV71</span> সম্পর্কে</>
+                <><span className="text-primary">NetPlay IPTV</span> সম্পর্কে</>
               )}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               {language === "en"
-                ? "LiveTV71 is a free, fast, and beautiful IPTV web application for watching live TV channels — built with Bangladeshi viewers in mind."
-                : "LiveTV71 হল একটি বিনামূল্যের, দ্রুত এবং সুন্দর IPTV ওয়েব অ্যাপ্লিকেশন যা বাংলাদেশী দর্শকদের কথা মাথায় রেখে তৈরি করা হয়েছে।"}
+                ? "NetPlay IPTV is a free, fast, and beautiful IPTV web application for watching live TV channels — built with Bangladeshi viewers in mind."
+                : "NetPlay IPTV হল একটি বিনামূল্যের, দ্রুত এবং সুন্দর IPTV ওয়েব অ্যাপ্লিকেশন যা বাংলাদেশী দর্শকদের কথা মাথায় রেখে তৈরি করা হয়েছে।"}
             </p>
           </motion.div>
         </div>
