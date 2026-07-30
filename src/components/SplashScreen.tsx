@@ -153,7 +153,7 @@ export function SplashScreen({ onDone }: SplashScreenProps) {
               >
                 <span className="text-white">Net</span>
                 <span style={{ color: "#e60000" }}>Play</span>
-                <span className="text-white/90">  IPTV</span>
+                <span className="text-white/90">iptv</span>
               </div>
               <motion.p
                 className="text-xs tracking-[0.4em] uppercase mt-2 font-medium"
