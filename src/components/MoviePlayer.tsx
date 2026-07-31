@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Maximize, WifiOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,13 +17,66 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // স্ক্রিন রোটেট হওয়ার সময় বর্তমান প্লেব্যাক টাইম ধরে রাখার জন্য
+  // প্লেব্যাক টাইম ও স্ক্রিন মোড ট্র্যাক রাখা
   const savedTimeRef = useRef<number>(0);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
+  // ১. প্লেব্যাক টাইম প্রতি মুহূর্তে সেভ করা (timeupdate event)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      if (video.currentTime > 0) {
+        savedTimeRef.current = video.currentTime;
+      }
+    };
+
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    return () => {
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+    };
+  }, []);
+
+  // ২. স্ক্রিন ঘুরালেই (Landscape হলেই) ফুলস্ক্রিন করার লজিক
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+      const container = containerRef.current;
+
+      if (isLandscape && container) {
+        // ল্যান্ডস্কেপ হলে অটো ফুলস্ক্রিন
+        if (!document.fullscreenElement) {
+          if (container.requestFullscreen) {
+            container.requestFullscreen().catch(() => {});
+          } else if ((container as any).webkitRequestFullscreen) {
+            (container as any).webkitRequestFullscreen();
+          }
+        }
+      } else if (!isLandscape && document.fullscreenElement) {
+        // পোর্ট্রেট এ ফেরত আসলে ফুলস্ক্রিন এক্সিট
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if ((document as any).webkitExitFullscreen) {
+          (document as any).webkitExitFullscreen();
+        }
+      }
+    };
+
+    // অরিয়েন্টেশন এবং রিসাইজ ইভেন্ট মনিটর করা
+    window.addEventListener("orientationchange", handleOrientationChange);
+    window.matchMedia("(orientation: landscape)").addEventListener("change", handleOrientationChange);
+
+    return () => {
+      window.removeEventListener("orientationchange", handleOrientationChange);
+      window.matchMedia("(orientation: landscape)").removeEventListener("change", handleOrientationChange);
+    };
+  }, []);
+
+  // ৩. ভিডিও লোড এবং রেজিউম লজিক
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !movie?.url) return;
@@ -37,10 +90,11 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       setIsLoading(false);
       setError(false);
 
-      // ডিভাইস ঘুরলে আগের টাইম থেকে ভিডিও চালু রাখা
-      if (savedTimeRef.current > 0) {
+      // পূর্বের টাইমে ভিডিও সেট করা
+      if (savedTimeRef.current > 0 && Math.abs(video.currentTime - savedTimeRef.current) > 1) {
         video.currentTime = savedTimeRef.current;
       }
+
       video.play().catch(() => {});
     };
 
@@ -53,7 +107,6 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     const onWaiting = () => setIsLoading(true);
     const onPlaying = () => setIsLoading(false);
 
-    // ১২ সেকেন্ডে রেসপন্স না পেলে এরর দেখাবে
     errorTimerRef.current = setTimeout(() => {
       if (video.readyState < 3) {
         setIsLoading(false);
@@ -75,31 +128,14 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     };
   }, [movie.url, retryKey]);
 
-  // প্লেব্যাক টাইম আপডেট ধরে রাখা
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleTimeUpdate = () => {
-      if (video.currentTime > 0) {
-        savedTimeRef.current = video.currentTime;
-      }
-    };
-
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    return () => {
-      video.removeEventListener("timeupdate", handleTimeUpdate);
-    };
-  }, []);
-
   const handleRetry = () => {
-    savedTimeRef.current = 0; // রিট্রাই চাপলে শুরু থেকে প্লে হবে
+    savedTimeRef.current = 0;
     setError(false);
     setIsLoading(true);
     setRetryKey((k) => k + 1);
   };
 
-  // VideoPlayer-এর মতো উন্নত Fullscreen & Landscape Functionality
+  // ৪. ম্যানুয়াল ফুলস্ক্রিন বাটন ক্লিক লজিক
   const toggleFullscreen = () => {
     const container = containerRef.current;
     if (!container) return;
@@ -108,11 +144,9 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       if (container.requestFullscreen) {
         container.requestFullscreen().catch(() => {});
       } else if ((container as any).webkitRequestFullscreen) {
-        /* Safari সাপোর্ট */
         (container as any).webkitRequestFullscreen();
       }
 
-      // মোবাইলে ফুলস্ক্রিন করার পর স্ক্রিন স্বয়ংক্রিয়ভাবে ল্যান্ডস্কেপ হবে
       if (screen.orientation && (screen.orientation as any).lock) {
         (screen.orientation as any).lock("landscape").catch(() => {});
       }
@@ -215,5 +249,4 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       </div>
     </div>
   );
-  }
-            
+              }
