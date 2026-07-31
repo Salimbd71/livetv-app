@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Maximize, WifiOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +17,9 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // স্ক্রিন রোটেট হওয়ার সময় বর্তমান প্লেব্যাক টাইম ধরে রাখার জন্য
+  const savedTimeRef = useRef<number>(0);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -33,6 +36,12 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
       setIsLoading(false);
       setError(false);
+
+      // ডিভাইস ঘুরলে আগের টাইম থেকে ভিডিও চালু রাখা
+      if (savedTimeRef.current > 0) {
+        video.currentTime = savedTimeRef.current;
+      }
+      video.play().catch(() => {});
     };
 
     const onError = () => {
@@ -66,18 +75,57 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     };
   }, [movie.url, retryKey]);
 
+  // প্লেব্যাক টাইম আপডেট ধরে রাখা
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleTimeUpdate = () => {
+      if (video.currentTime > 0) {
+        savedTimeRef.current = video.currentTime;
+      }
+    };
+
+    video.addEventListener("timeupdate", handleTimeUpdate);
+    return () => {
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+    };
+  }, []);
+
   const handleRetry = () => {
+    savedTimeRef.current = 0; // রিট্রাই চাপলে শুরু থেকে প্লে হবে
     setError(false);
     setIsLoading(true);
     setRetryKey((k) => k + 1);
   };
 
+  // VideoPlayer-এর মতো উন্নত Fullscreen & Landscape Functionality
   const toggleFullscreen = () => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
+
     if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch(() => {});
+      if (container.requestFullscreen) {
+        container.requestFullscreen().catch(() => {});
+      } else if ((container as any).webkitRequestFullscreen) {
+        /* Safari সাপোর্ট */
+        (container as any).webkitRequestFullscreen();
+      }
+
+      // মোবাইলে ফুলস্ক্রিন করার পর স্ক্রিন স্বয়ংক্রিয়ভাবে ল্যান্ডস্কেপ হবে
+      if (screen.orientation && (screen.orientation as any).lock) {
+        (screen.orientation as any).lock("landscape").catch(() => {});
+      }
     } else {
-      document.exitFullscreen();
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      }
+
+      if (screen.orientation && screen.orientation.unlock) {
+        screen.orientation.unlock();
+      }
     }
   };
 
@@ -88,7 +136,7 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     >
       <video
         ref={videoRef}
-        key={`${movie.url}-${retryKey}`} // key ব্যবহারের ফলে শুধু এগুলো চেঞ্জ হলেই কেবল নতুন প্লেয়ার লোড হবে
+        key={`${movie.url}-${retryKey}`}
         className="w-full h-full object-contain"
         controls
         playsInline
@@ -167,4 +215,5 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       </div>
     </div>
   );
-}
+  }
+            
