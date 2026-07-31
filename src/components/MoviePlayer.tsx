@@ -12,37 +12,77 @@ interface MoviePlayerProps {
   };
 }
 
+// ── Module-level playback state cache ─────────────────────────────────────
+// Survives component unmount/remount (layout switches, orientation changes).
+// Keyed by movie URL so we restore the right position.
+const _playbackCache: Record<string, { time: number; paused: boolean }> = {};
+
+function savePlayback(url: string, video: HTMLVideoElement) {
+  if (!url || video.readyState < 1 || video.error) return;
+  _playbackCache[url] = { time: video.currentTime, paused: video.paused };
+}
+
+function restorePlayback(url: string, video: HTMLVideoElement) {
+  const saved = _playbackCache[url];
+  if (!saved || saved.time < 0.5) return; // don't bother for < 0.5s
+  video.currentTime = saved.time;
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 export function MoviePlayer({ movie }: MoviePlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef      = useRef<HTMLVideoElement>(null);
+  const containerRef  = useRef<HTMLDivElement>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track which URL we initialised so we can skip duplicate inits
+  const initUrlRef    = useRef<string>("");
+  const retryKeyRef   = useRef<number>(0);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
+  const [error, setError]         = useState(false);
+  const [retryKey, setRetryKey]   = useState(0);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !movie?.url) return;
 
-    // Reset state
+    const url = movie.url;
+
+    // ── Skip re-init when layout flips (same URL, no retry) ──────────────
+    // If the video element already has our src loaded and is playing/paused
+    // normally (no error), just let it continue — don't restart.
+    const isRetry = retryKey !== retryKeyRef.current;
+    retryKeyRef.current = retryKey;
+
+    if (
+      !isRetry &&
+      initUrlRef.current === url &&
+      video.readyState >= 2 &&   // HAVE_CURRENT_DATA or better
+      !video.error
+    ) {
+      // Already loaded & playing the correct URL — nothing to do.
+      setIsLoading(false);
+      setError(false);
+      return;
+    }
+
+    // ── Full initialisation ───────────────────────────────────────────────
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
     setError(false);
     setIsLoading(true);
+    initUrlRef.current = url;
 
-    // Stop any previous playback
+    // Stop previous playback cleanly (without wiping the DOM element)
     try {
       video.pause();
-      video.removeAttribute("src");
-      video.load();
     } catch (_) {}
 
-    // Set new source and load
-    video.src = movie.url;
+    video.src = url;
     video.load();
 
     const onCanPlay = () => {
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      // Restore saved position (if the user had watched part of this movie)
+      restorePlayback(url, video);
       setIsLoading(false);
       setError(false);
       video.play().catch(() => {});
@@ -54,37 +94,45 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       setError(true);
     };
 
-    const onWaiting = () => setIsLoading(true);
-    const onPlaying = () => setIsLoading(false);
+    const onWaiting  = () => setIsLoading(true);
+    const onPlaying  = () => setIsLoading(false);
 
-    // Timeout fallback — if nothing happens in 12s, show error
+    // 12-second timeout before showing error
     errorTimerRef.current = setTimeout(() => {
       setIsLoading(false);
       setError(true);
     }, 12000);
 
-    video.addEventListener("canplay", onCanPlay);
-    video.addEventListener("error", onError);
-    video.addEventListener("waiting", onWaiting);
-    video.addEventListener("playing", onPlaying);
+    video.addEventListener("canplay",  onCanPlay);
+    video.addEventListener("error",    onError);
+    video.addEventListener("waiting",  onWaiting);
+    video.addEventListener("playing",  onPlaying);
 
     return () => {
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-      video.removeEventListener("canplay", onCanPlay);
-      video.removeEventListener("error", onError);
-      video.removeEventListener("waiting", onWaiting);
-      video.removeEventListener("playing", onPlaying);
-      try {
-        video.pause();
-        video.removeAttribute("src");
-        video.load();
-      } catch (_) {}
+      video.removeEventListener("canplay",  onCanPlay);
+      video.removeEventListener("error",    onError);
+      video.removeEventListener("waiting",  onWaiting);
+      video.removeEventListener("playing",  onPlaying);
+
+      // ── Save playback position before unmount ─────────────────────────
+      // This preserves the position across layout switches (orientation,
+      // desktop ↔ mobile) so the video resumes from the same point.
+      savePlayback(url, video);
+
+      // Pause gently — do NOT remove src or call load().
+      // Removing src forces a full reload; we avoid that so that if the same
+      // component remounts quickly the browser may reuse the buffered data.
+      try { video.pause(); } catch (_) {}
     };
   }, [movie.url, retryKey]);
 
   const handleRetry = () => {
     setError(false);
     setIsLoading(true);
+    // Clear cached state so retry starts fresh
+    delete _playbackCache[movie.url];
+    initUrlRef.current = "";
     setRetryKey(k => k + 1);
   };
 
