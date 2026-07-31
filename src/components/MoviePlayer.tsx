@@ -25,27 +25,14 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     const video = videoRef.current;
     if (!video || !movie?.url) return;
 
-    // Reset state
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
     setError(false);
     setIsLoading(true);
-
-    // Stop any previous playback
-    try {
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
-    } catch (_) {}
-
-    // Set new source and load
-    video.src = movie.url;
-    video.load();
 
     const onCanPlay = () => {
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
       setIsLoading(false);
       setError(false);
-      video.play().catch(() => {});
     };
 
     const onError = () => {
@@ -57,10 +44,12 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     const onWaiting = () => setIsLoading(true);
     const onPlaying = () => setIsLoading(false);
 
-    // Timeout fallback — if nothing happens in 12s, show error
+    // ১২ সেকেন্ডে রেসপন্স না পেলে এরর দেখাবে
     errorTimerRef.current = setTimeout(() => {
-      setIsLoading(false);
-      setError(true);
+      if (video.readyState < 3) {
+        setIsLoading(false);
+        setError(true);
+      }
     }, 12000);
 
     video.addEventListener("canplay", onCanPlay);
@@ -74,18 +63,13 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       video.removeEventListener("error", onError);
       video.removeEventListener("waiting", onWaiting);
       video.removeEventListener("playing", onPlaying);
-      try {
-        video.pause();
-        video.removeAttribute("src");
-        video.load();
-      } catch (_) {}
     };
   }, [movie.url, retryKey]);
 
   const handleRetry = () => {
     setError(false);
     setIsLoading(true);
-    setRetryKey(k => k + 1);
+    setRetryKey((k) => k + 1);
   };
 
   const toggleFullscreen = () => {
@@ -104,11 +88,15 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     >
       <video
         ref={videoRef}
+        key={`${movie.url}-${retryKey}`} // key ব্যবহারের ফলে শুধু এগুলো চেঞ্জ হলেই কেবল নতুন প্লেয়ার লোড হবে
         className="w-full h-full object-contain"
         controls
         playsInline
         preload="auto"
-      />
+        autoPlay
+      >
+        <source src={movie.url} />
+      </video>
 
       {/* Loading overlay */}
       <AnimatePresence>
@@ -158,7 +146,7 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
                 src={movie.logo}
                 alt={movie.name}
                 className="w-full h-full object-cover"
-                onError={e => (e.currentTarget.style.display = "none")}
+                onError={(e) => (e.currentTarget.style.display = "none")}
               />
             </div>
           )}
