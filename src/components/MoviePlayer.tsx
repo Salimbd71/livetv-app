@@ -21,49 +21,30 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
-  // ১. ইউনিক স্টোরেজ কি (Storage Key)
-  const storageKey = `movie_pos_${movie?.url}`;
-
-  // ২. ভিডিওর বর্তমান সময় sessionStorage-এ সেভ রাখা
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleTimeUpdate = () => {
-      if (video.currentTime > 0) {
-        sessionStorage.setItem(storageKey, video.currentTime.toString());
-      }
-    };
-
-    video.addEventListener("timeupdate", handleTimeUpdate);
-    return () => {
-      video.removeEventListener("timeupdate", handleTimeUpdate);
-    };
-  }, [storageKey]);
-
-  // ৩. স্ক্রিন ঘুরালে বা ডেস্কটপ মোডে সুইচ করলে ভিডিও লোড ও রেজুম লজিক
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !movie?.url) return;
 
+    // Reset state
     if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
     setError(false);
     setIsLoading(true);
+
+    // Stop any previous playback
+    try {
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    } catch (_) {}
+
+    // Set new source and load
+    video.src = movie.url;
+    video.load();
 
     const onCanPlay = () => {
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
       setIsLoading(false);
       setError(false);
-
-      // sessionStorage থেকে সেভ থাকা টাইম উদ্ধার করা
-      const savedTime = sessionStorage.getItem(storageKey);
-      if (savedTime) {
-        const timeToSeek = parseFloat(savedTime);
-        if (!isNaN(timeToSeek) && timeToSeek > 0) {
-          video.currentTime = timeToSeek;
-        }
-      }
-
       video.play().catch(() => {});
     };
 
@@ -76,11 +57,10 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     const onWaiting = () => setIsLoading(true);
     const onPlaying = () => setIsLoading(false);
 
+    // Timeout fallback — if nothing happens in 12s, show error
     errorTimerRef.current = setTimeout(() => {
-      if (video.readyState < 3) {
-        setIsLoading(false);
-        setError(true);
-      }
+      setIsLoading(false);
+      setError(true);
     }, 12000);
 
     video.addEventListener("canplay", onCanPlay);
@@ -94,42 +74,26 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       video.removeEventListener("error", onError);
       video.removeEventListener("waiting", onWaiting);
       video.removeEventListener("playing", onPlaying);
+      try {
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      } catch (_) {}
     };
-  }, [movie.url, retryKey, storageKey]);
+  }, [movie.url, retryKey]);
 
-  // ৪. রিট্রাই বাটন প্রেস
   const handleRetry = () => {
-    sessionStorage.removeItem(storageKey);
     setError(false);
     setIsLoading(true);
-    setRetryKey((k) => k + 1);
+    setRetryKey(k => k + 1);
   };
 
-  // ৫. ফুলস্ক্রিন ও অরিয়েন্টেশন লজিক
   const toggleFullscreen = () => {
-    const container = containerRef.current;
-    if (!container) return;
-
+    if (!containerRef.current) return;
     if (!document.fullscreenElement) {
-      if (container.requestFullscreen) {
-        container.requestFullscreen().catch(() => {});
-      } else if ((container as any).webkitRequestFullscreen) {
-        (container as any).webkitRequestFullscreen();
-      }
-
-      if (screen.orientation && (screen.orientation as any).lock) {
-        (screen.orientation as any).lock("landscape").catch(() => {});
-      }
+      containerRef.current.requestFullscreen().catch(() => {});
     } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
-      } else if ((document as any).webkitExitFullscreen) {
-        (document as any).webkitExitFullscreen();
-      }
-
-      if (screen.orientation && screen.orientation.unlock) {
-        screen.orientation.unlock();
-      }
+      document.exitFullscreen();
     }
   };
 
@@ -140,15 +104,11 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     >
       <video
         ref={videoRef}
-        key={`${movie.url}-${retryKey}`}
         className="w-full h-full object-contain"
         controls
         playsInline
         preload="auto"
-        autoPlay
-      >
-        <source src={movie.url} />
-      </video>
+      />
 
       {/* Loading overlay */}
       <AnimatePresence>
@@ -198,7 +158,7 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
                 src={movie.logo}
                 alt={movie.name}
                 className="w-full h-full object-cover"
-                onError={(e) => (e.currentTarget.style.display = "none")}
+                onError={e => (e.currentTarget.style.display = "none")}
               />
             </div>
           )}
