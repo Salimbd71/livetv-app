@@ -17,21 +17,21 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // প্লেব্যাক টাইম ও স্ক্রিন মোড ট্র্যাক রাখা
-  const savedTimeRef = useRef<number>(0);
-
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
 
-  // ১. প্লেব্যাক টাইম প্রতি মুহূর্তে সেভ করা (timeupdate event)
+  // ১. ইউনিক স্টোরেজ কি (Storage Key)
+  const storageKey = `movie_pos_${movie?.url}`;
+
+  // ২. ভিডিওর বর্তমান সময় sessionStorage-এ সেভ রাখা
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
       if (video.currentTime > 0) {
-        savedTimeRef.current = video.currentTime;
+        sessionStorage.setItem(storageKey, video.currentTime.toString());
       }
     };
 
@@ -39,44 +39,9 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     return () => {
       video.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, []);
+  }, [storageKey]);
 
-  // ২. স্ক্রিন ঘুরালেই (Landscape হলেই) ফুলস্ক্রিন করার লজিক
-  useEffect(() => {
-    const handleOrientationChange = () => {
-      const isLandscape = window.matchMedia("(orientation: landscape)").matches;
-      const container = containerRef.current;
-
-      if (isLandscape && container) {
-        // ল্যান্ডস্কেপ হলে অটো ফুলস্ক্রিন
-        if (!document.fullscreenElement) {
-          if (container.requestFullscreen) {
-            container.requestFullscreen().catch(() => {});
-          } else if ((container as any).webkitRequestFullscreen) {
-            (container as any).webkitRequestFullscreen();
-          }
-        }
-      } else if (!isLandscape && document.fullscreenElement) {
-        // পোর্ট্রেট এ ফেরত আসলে ফুলস্ক্রিন এক্সিট
-        if (document.exitFullscreen) {
-          document.exitFullscreen().catch(() => {});
-        } else if ((document as any).webkitExitFullscreen) {
-          (document as any).webkitExitFullscreen();
-        }
-      }
-    };
-
-    // অরিয়েন্টেশন এবং রিসাইজ ইভেন্ট মনিটর করা
-    window.addEventListener("orientationchange", handleOrientationChange);
-    window.matchMedia("(orientation: landscape)").addEventListener("change", handleOrientationChange);
-
-    return () => {
-      window.removeEventListener("orientationchange", handleOrientationChange);
-      window.matchMedia("(orientation: landscape)").removeEventListener("change", handleOrientationChange);
-    };
-  }, []);
-
-  // ৩. ভিডিও লোড এবং রেজিউম লজিক
+  // ৩. স্ক্রিন ঘুরালে বা ডেস্কটপ মোডে সুইচ করলে ভিডিও লোড ও রেজুম লজিক
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !movie?.url) return;
@@ -90,9 +55,13 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       setIsLoading(false);
       setError(false);
 
-      // পূর্বের টাইমে ভিডিও সেট করা
-      if (savedTimeRef.current > 0 && Math.abs(video.currentTime - savedTimeRef.current) > 1) {
-        video.currentTime = savedTimeRef.current;
+      // sessionStorage থেকে সেভ থাকা টাইম উদ্ধার করা
+      const savedTime = sessionStorage.getItem(storageKey);
+      if (savedTime) {
+        const timeToSeek = parseFloat(savedTime);
+        if (!isNaN(timeToSeek) && timeToSeek > 0) {
+          video.currentTime = timeToSeek;
+        }
       }
 
       video.play().catch(() => {});
@@ -126,16 +95,17 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       video.removeEventListener("waiting", onWaiting);
       video.removeEventListener("playing", onPlaying);
     };
-  }, [movie.url, retryKey]);
+  }, [movie.url, retryKey, storageKey]);
 
+  // ৪. রিট্রাই বাটন প্রেস
   const handleRetry = () => {
-    savedTimeRef.current = 0;
+    sessionStorage.removeItem(storageKey);
     setError(false);
     setIsLoading(true);
     setRetryKey((k) => k + 1);
   };
 
-  // ৪. ম্যানুয়াল ফুলস্ক্রিন বাটন ক্লিক লজিক
+  // ৫. ফুলস্ক্রিন ও অরিয়েন্টেশন লজিক
   const toggleFullscreen = () => {
     const container = containerRef.current;
     if (!container) return;
@@ -249,4 +219,4 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       </div>
     </div>
   );
-              }
+}
