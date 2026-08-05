@@ -9,6 +9,7 @@ interface LanguageContextType {
 }
 
 const translations: Record<string, Record<Language, string>> = {
+  // ── Existing Translations ─────────────────────────────────
   "All Channels": { en: "All Channels", bn: "সকল চ্যানেল" },
   "All Category": { en: "All Category", bn: "সব ক্যাটাগরি" },
   "Search channels...": { en: "Search channels...", bn: "চ্যানেল খুঁজুন..." },
@@ -38,6 +39,26 @@ const translations: Record<string, Record<Language, string>> = {
   "No channels found": { en: "No channels found", bn: "কোনো চ্যানেল পাওয়া যায়নি" },
   "Call Me": { en: "Call Me", bn: "ফোন করুন" },
   "Developer": { en: "Developer", bn: "ডেভেলপার" },
+  "Previous": { en: "Previous", bn: "পূর্ববর্তী" },
+  "Next": { en: "Next", bn: "পরবর্তী" },
+  "Loading channels...": { en: "Loading channels...", bn: "চ্যানেল লোড হচ্ছে..." },
+
+  // ── Movies Page Translations (New Added) ──────────────────
+  "All Movies": { en: "All Movies", bn: "সব মুভি" },
+  "Hindi Movies": { en: "Hindi Movies", bn: "হিন্দি মুভি" },
+  "4K Hindi Movies": { en: "4K Hindi Movies", bn: "৪কে হিন্দি মুভি" },
+  "Bangla Movies": { en: "Bangla Movies", bn: "বাংলা মুভি" },
+  "Kalkata Bangla Movies": { en: "Kalkata Bangla Movies", bn: "কলকাতা বাংলা মুভি" },
+  "Southindian Hindi Dubbed": { en: "South Indian (Hindi Dubbed)", bn: "সাউথ ইন্ডিয়ান (হিন্দি ডাবড)" },
+  "PLAYING": { en: "PLAYING", bn: "চলছে" },
+  "Select a Movie": { en: "Select a Movie", bn: "মুভি সিলেক্ট করুন" },
+  "Click on any movie from the list below": { en: "Click on any movie from the list below", bn: "নিচের তালিকা থেকে যেকোনো মুভিতে ক্লিক করুন" },
+  "Loading movies...": { en: "Loading movies...", bn: "মুভি লোড হচ্ছে..." },
+  "Movies Streaming": { en: "Movies Streaming", bn: "মুভি স্ট্রিমিং" },
+  "No movies found": { en: "No movies found", bn: "কোনো মুভি পাওয়া যায়নি" },
+  "No movies in this category": { en: "No movies in this category", bn: "এই ক্যাটাগরিতে কোনো মুভি নেই" },
+  "Failed to load movies": { en: "Failed to load movies", bn: "মুভি লোড করতে ব্যর্থ হয়েছে" },
+  "Try Again": { en: "Try Again", bn: "আবার চেষ্টা করুন" },
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -62,4 +83,4 @@ export function useLanguage() {
     throw new Error("useLanguage must be used within a LanguageProvider");
   }
   return context;
-}
+                       }
