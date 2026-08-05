@@ -7,6 +7,7 @@ import { MoviePlayer } from "@/components/MoviePlayer";
 import { useMovies, type Movie } from "@/hooks/use-movies";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useGlobal } from "@/contexts/GlobalContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -35,6 +36,8 @@ function SkeletonCard() {
 // ── Movie card ────────────────────────────────────────────────────────────
 function MovieCard({ movie, active, onClick }: { movie: Movie; active: boolean; onClick: () => void }) {
   const [imgErr, setImgErr] = useState(false);
+  const { t } = useLanguage();
+
   return (
     <motion.button
       initial={{ opacity: 0, y: 12 }}
@@ -65,7 +68,7 @@ function MovieCard({ movie, active, onClick }: { movie: Movie; active: boolean; 
         {active && (
           <div className="absolute top-2 left-2 flex items-center gap-1 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block" />
-            PLAYING
+            {t("PLAYING") || "PLAYING"}
           </div>
         )}
       </div>
@@ -73,7 +76,7 @@ function MovieCard({ movie, active, onClick }: { movie: Movie; active: boolean; 
         <p className={`text-xs font-semibold leading-tight line-clamp-2 ${active ? "text-primary" : "text-foreground"}`}>
           {movie.name}
         </p>
-        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{movie.category}</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{t(movie.category)}</p>
       </div>
     </motion.button>
   );
@@ -109,6 +112,7 @@ function DesktopCategoryStrip({
   activeCategory: string | null;
   setActiveCategory: (c: string | null) => void;
 }) {
+  const { t } = useLanguage();
   const stripRef = useRef<HTMLDivElement>(null);
   const pillRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
@@ -116,7 +120,6 @@ function DesktopCategoryStrip({
     const strip = stripRef.current;
     const pill = pillRefs.current.get(key);
     if (!strip || !pill) return;
-    // getBoundingClientRect so calculation is independent of offsetParent
     const stripRect = strip.getBoundingClientRect();
     const pillRect = pill.getBoundingClientRect();
     strip.scrollLeft += (pillRect.left - stripRect.left) + pillRect.width / 2 - strip.offsetWidth / 2;
@@ -136,7 +139,7 @@ function DesktopCategoryStrip({
         <CategoryPill
           active={activeCategory === null}
           icon={<Film className="w-3 h-3" />}
-          label={`সব মুভি (${totalMovies})`}
+          label={`${t("All Movies")} (${totalMovies})`}
           onClick={() => setActiveCategory(null)}
           pillRef={el => { if (el) pillRefs.current.set("__all", el); else pillRefs.current.delete("__all"); }}
         />
@@ -145,7 +148,7 @@ function DesktopCategoryStrip({
             key={cat}
             active={activeCategory === cat}
             icon={getCategoryIcon(cat)}
-            label={`${cat} (${categoryCounts[cat] || 0})`}
+            label={`${t(cat)} (${categoryCounts[cat] || 0})`}
             onClick={() => setActiveCategory(cat)}
             pillRef={el => { if (el) pillRefs.current.set(cat, el); else pillRefs.current.delete(cat); }}
           />
@@ -160,6 +163,7 @@ export default function Movies() {
   const { movies, loading, error, retry } = useMovies();
   const isMobile = useIsMobile();
   const { searchQuery } = useGlobal();
+  const { t } = useLanguage();
 
   const [activeMovie, setActiveMovie]       = useState<Movie | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -176,7 +180,6 @@ export default function Movies() {
     [movies]
   );
 
-  // Clear category filter when global search is active
   useEffect(() => {
     if (searchQuery) setActiveCategory(null);
   }, [searchQuery]);
@@ -204,11 +207,11 @@ export default function Movies() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
         <WifiOff className="w-14 h-14 text-destructive/60" />
-        <p className="font-bold text-lg">মুভি লোড হয়নি</p>
+        <p className="font-bold text-lg">{t("Failed to load movies")}</p>
         <p className="text-sm text-muted-foreground">{error}</p>
         <button onClick={retry}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors">
-          <RefreshCw className="w-4 h-4" /> আবার চেষ্টা করুন
+          <RefreshCw className="w-4 h-4" /> {t("Try Again")}
         </button>
       </div>
     );
@@ -222,8 +225,8 @@ export default function Movies() {
         <div className="w-16 h-16 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center mb-1">
           <Clapperboard className="w-8 h-8 text-primary" />
         </div>
-        <p className="text-white font-bold text-base">মুভি সিলেক্ট করুন</p>
-        <p className="text-white/40 text-xs max-w-[200px]">নিচের তালিকা থেকে যেকোনো মুভিতে ক্লিক করুন</p>
+        <p className="text-white font-bold text-base">{t("Select a Movie")}</p>
+        <p className="text-white/40 text-xs max-w-[200px]">{t("Click on any movie from the list below")}</p>
       </div>
     </div>
   );
@@ -234,7 +237,7 @@ export default function Movies() {
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all
           ${canPrev ? "border-border text-foreground hover:bg-muted hover:border-primary/40 active:scale-95"
                     : "border-border/40 text-muted-foreground/30 cursor-not-allowed"}`}>
-        <ChevronLeft className="w-3.5 h-3.5" /> Prev
+        <ChevronLeft className="w-3.5 h-3.5" /> {t("Previous")}
       </button>
       {activeMovie && (
         <span className="text-[10px] text-muted-foreground truncate max-w-[160px] text-center hidden sm:block">
@@ -245,7 +248,7 @@ export default function Movies() {
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all
           ${canNext ? "border-border text-foreground hover:bg-muted hover:border-primary/40 active:scale-95"
                     : "border-border/40 text-muted-foreground/30 cursor-not-allowed"}`}>
-        Next <ChevronRight className="w-3.5 h-3.5" />
+        {t("Next")} <ChevronRight className="w-3.5 h-3.5" />
       </button>
     </div>
   );
@@ -260,7 +263,7 @@ export default function Movies() {
       <div className="flex flex-col items-center justify-center min-h-[30vh] gap-3 text-center p-8">
         <Film className="w-12 h-12 text-muted-foreground/30" />
         <p className="text-muted-foreground text-sm">
-          {searchQuery ? `"${searchQuery}" — কোনো মুভি পাওয়া যায়নি` : "এই ক্যাটাগরিতে কোনো মুভি নেই"}
+          {searchQuery ? `"${searchQuery}" — ${t("No movies found")}` : t("No movies in this category")}
         </p>
       </div>
     );
@@ -285,7 +288,7 @@ export default function Movies() {
               <>
                 <div className="mt-2 px-0.5">
                   <p className="font-bold text-sm leading-tight truncate">{activeMovie.name}</p>
-                  <p className="text-xs text-muted-foreground">{activeMovie.category}</p>
+                  <p className="text-xs text-muted-foreground">{t(activeMovie.category)}</p>
                 </div>
                 <NavBar />
               </>
@@ -296,11 +299,11 @@ export default function Movies() {
             style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
             <div className="flex gap-2 px-3 py-2 min-w-max">
               <CategoryPill active={activeCategory === null} icon={<Film className="w-3 h-3" />}
-                label={`All Movies (${movies.length})`} onClick={() => setActiveCategory(null)} />
+                label={`${t("All Movies")} (${movies.length})`} onClick={() => setActiveCategory(null)} />
               {categories.map(cat => (
                 <CategoryPill key={cat} active={activeCategory === cat}
                   icon={getCategoryIcon(cat)}
-                  label={`${cat} (${categoryCounts[cat] || 0})`}
+                  label={`${t(cat)} (${categoryCounts[cat] || 0})`}
                   onClick={() => setActiveCategory(cat)} />
               ))}
             </div>
@@ -330,7 +333,7 @@ export default function Movies() {
                   )}
                   <div className="min-w-0">
                     <p className="font-bold text-sm leading-tight truncate">{activeMovie.name}</p>
-                    <p className="text-xs text-muted-foreground">{activeMovie.category}</p>
+                    <p className="text-xs text-muted-foreground">{t(activeMovie.category)}</p>
                   </div>
                 </div>
                 <NavBar />
@@ -341,7 +344,7 @@ export default function Movies() {
                 <div className="mt-3 text-center">
                   <p className="text-sm font-semibold text-foreground">NetPlay IPTV Movies</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {loading ? "মুভি লোড হচ্ছে..." : `${movies.length}+ মুভি স্ট্রিমিং`}
+                    {loading ? t("Loading movies...") : `${movies.length}+ ${t("Movies Streaming")}`}
                   </p>
                 </div>
               </motion.div>
@@ -353,7 +356,6 @@ export default function Movies() {
       {/* Right panel: sticky category strip + movie grid */}
       <div className="flex-1 flex flex-col overflow-hidden bg-background">
 
-        {/* Horizontal category strip — sticky at top of right panel */}
         <DesktopCategoryStrip
           categories={categories}
           categoryCounts={categoryCounts}
@@ -362,12 +364,11 @@ export default function Movies() {
           setActiveCategory={setActiveCategory}
         />
 
-        {/* Scrollable movie grid */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              <p className="text-sm text-muted-foreground">মুভি লোড হচ্ছে...</p>
+              <p className="text-sm text-muted-foreground">{t("Loading movies...")}</p>
             </div>
           ) : (
             <Grid cols="grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" />
@@ -376,4 +377,5 @@ export default function Movies() {
       </div>
     </div>
   );
-}
+    }
+                  
