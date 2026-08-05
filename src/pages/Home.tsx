@@ -138,13 +138,13 @@ export default function Home() {
     </div>
   );
 
-  // Horizontal Category Bar Component
+  // Horizontal Category Bar
   const HorizontalCategoryBar = () => (
     <div
-      className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border overflow-x-auto"
+      className="sticky top-0 z-20 bg-background/95 backdrop-blur shrink-0 border-b border-border overflow-x-auto w-full"
       style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
     >
-      <div className="flex gap-2 px-3 py-2.5 min-w-max">
+      <div className="flex items-center gap-2 px-3 py-2.5 w-max">
         <CategoryPill
           active={isAllActive}
           icon={<Tv className="w-3.5 h-3.5" />}
@@ -191,7 +191,7 @@ export default function Home() {
   // ── MOBILE layout ────────────────────────────────────────────────────────
   if (isMobile) {
     return (
-      <div className="flex flex-col">
+      <div className="flex flex-col min-h-screen bg-background">
         <div id="player-anchor" className="sticky top-[var(--navbar-h)] z-20 bg-background border-b border-border">
           <div className="px-3 pt-3 pb-2">
             {playerEl}
@@ -216,11 +216,11 @@ export default function Home() {
   // ── DESKTOP layout ───────────────────────────────────────────────────────
   return (
     <div
-      className="flex overflow-hidden"
+      className="flex w-full overflow-hidden bg-background"
       style={{ height: "calc(100dvh - var(--navbar-h))" }}
     >
-      {/* Left panel: Player + Active Info only */}
-      <div className="w-[48%] lg:w-[50%] xl:w-[52%] flex flex-col border-r border-border overflow-y-auto bg-background p-4">
+      {/* Left panel: Player area */}
+      <div className="w-[45%] lg:w-[48%] xl:w-[50%] flex flex-col border-r border-border overflow-y-auto p-4 shrink-0">
         {playerEl}
 
         {activeChannel && (
@@ -245,7 +245,7 @@ export default function Home() {
       </div>
 
       {/* Right panel: Horizontal Category Bar + Channel Grid */}
-      <div className="flex-1 overflow-y-auto bg-background flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
         <HorizontalCategoryBar />
         <div className="flex-1">
           <ChannelGrid
@@ -269,7 +269,7 @@ function CategoryPill({ active, icon, label, onClick, red }: {
 }) {
   const pillRef = useRef<HTMLButtonElement>(null);
 
-  // Auto-scroll selected button to center
+  // Auto-scroll selected button to middle
   useEffect(() => {
     if (active && pillRef.current) {
       pillRef.current.scrollIntoView({
@@ -296,4 +296,5 @@ function CategoryPill({ active, icon, label, onClick, red }: {
       {label}
     </button>
   );
-        }
+          }
+      
