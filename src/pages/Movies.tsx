@@ -304,99 +304,57 @@ export default function Movies() {
   }
 
   // ── DESKTOP layout ────────────────────────────────────────────────────────
-  return (
-    <div className="flex overflow-hidden" style={{ height: "calc(100dvh - var(--navbar-h))" }}>
-      {/* Left panel: player + categories */}
-      <div className="w-[48%] lg:w-[50%] xl:w-[52%] flex flex-col border-r border-border overflow-hidden">
-        {/* Hero / Player */}
-        <div className="shrink-0 p-4 border-b border-border bg-background">
-          <AnimatePresence mode="wait">
-            {activeMovie ? (
-              <motion.div key="player" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <MoviePlayer movie={activeMovie} />
-                <div className="mt-2.5 flex items-center gap-2.5">
-                  {activeMovie.logo && (
-                    <img
-                      src={activeMovie.logo}
-                      alt=""
-                      className="w-10 h-14 object-cover rounded bg-muted/30 shrink-0"
-                      onError={e => (e.currentTarget.style.display = "none")}
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm leading-tight truncate">{activeMovie.name}</p>
-                    <p className="text-xs text-muted-foreground">{activeMovie.category}</p>
-                  </div>
-                </div>
-                <NavBar />
-              </motion.div>
-            ) : (
-              <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <HeroPlaceholder />
-                <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold text-foreground">NetPlay IPTV Movies</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {loading ? "মুভি লোড হচ্ছে..." : `${movies.length}+ মুভি স্ট্রিমিং`}
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+return (
+  <div className="flex overflow-hidden" style={{ height: "calc(100dvh - var(--navbar-h))" }}>
+    {/* Left panel: player */}
+    <div className="w-[45%] xl:w-[48%] flex flex-col border-r border-border overflow-hidden bg-background p-4">
+      <AnimatePresence mode="wait">
+        {activeMovie ? (
+          <motion.div key="player" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <MoviePlayer movie={activeMovie} />
+            <div className="mt-2.5 flex items-center gap-2.5">
+              {activeMovie.logo && (
+                <img
+                  src={activeMovie.logo}
+                  alt=""
+                  className="w-10 h-14 object-cover rounded bg-muted/30 shrink-0"
+                  onError={(e) => (e.currentTarget.style.display = "none")}
+                />
+              )}
+              <div className="min-w-0">
+                <p className="font-bold text-sm leading-tight truncate">{activeMovie.name}</p>
+                <p className="text-xs text-muted-foreground">{activeMovie.category}</p>
+              </div>
+            </div>
+            <NavBar />
+          </motion.div>
+        ) : (
+          <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <HeroPlaceholder />
+            <div className="mt-3 text-center">
+              <p className="text-sm font-semibold text-foreground">NetPlay IPTV Movies</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {loading ? "মুভি লোড হচ্ছে..." : `${movies.length}+ মুভি স্ট্রিমিং`}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
 
-        {/* Category sidebar list */}
-        <div className="flex-1 overflow-y-auto bg-sidebar">
-          <div className="p-3">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 py-2">
-              ক্যাটাগরি
-            </p>
+    {/* Right panel: Top fixed Categories + Movie Grid */}
+    <div className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden">
+      {/* Horizontally Fixed Categories Bar */}
+      <HorizontalCategories
+        categories={categories}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
+        categoryCounts={categoryCounts}
+        totalMovies={movies.length}
+      />
 
-            {/* All Movies */}
-            <button
-              onClick={() => setActiveCategory(null)}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left
-                ${activeCategory === null
-                  ? "bg-primary/15 text-primary"
-                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                }`}
-            >
-              <Film className="w-4 h-4 shrink-0" />
-              সব মুভি
-              <span className="ml-auto text-[10px] font-bold bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">
-                {movies.length}
-              </span>
-            </button>
-
-            <div className="h-px bg-border my-2 mx-1" />
-
-            {categories.map(cat => {
-              const isActive = activeCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left
-                    ${isActive
-                      ? "bg-primary/15 text-primary"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                    }`}
-                >
-                  <span className={isActive ? "text-primary" : "text-sidebar-foreground/50"}>
-                    {getCategoryIcon(cat)}
-                  </span>
-                  {cat}
-                  <span className="ml-auto text-[10px] font-bold bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground">
-                    {categoryCounts[cat] || 0}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Right panel: movie grid */}
-      <div className="flex-1 overflow-y-auto bg-background">
+      {/* Grid Content Container */}
+      <div className="flex-1 overflow-y-auto p-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -407,5 +365,7 @@ export default function Movies() {
         )}
       </div>
     </div>
-  );
+  </div>
+);
+  
 }
