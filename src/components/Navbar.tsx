@@ -113,7 +113,7 @@ export function Navbar() {
                 value={searchQuery}
                 onChange={setSearchQuery}
                 onClear={() => setSearchQuery("")}
-                placeholder={location === "/movies" ? t("Search movies...") : t("Search channels...")}
+                placeholder={t("Search channels...")}
                 testId="input-search"
               />
             </div>
@@ -147,7 +147,7 @@ export function Navbar() {
               value={searchQuery}
               onChange={setSearchQuery}
               onClear={() => setSearchQuery("")}
-              placeholder={location === "/movies" ? t("Search movies...") : t("Search channels...")}
+              placeholder={t("Search channels...")}
               testId="input-search-mobile"
             />
           </div>
