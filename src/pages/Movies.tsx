@@ -296,7 +296,7 @@ export default function Movies() {
             style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
             <div className="flex gap-2 px-3 py-2 min-w-max">
               <CategoryPill active={activeCategory === null} icon={<Film className="w-3 h-3" />}
-                label={`সব মুভি (${movies.length})`} onClick={() => setActiveCategory(null)} />
+                label={`All Movies (${movies.length})`} onClick={() => setActiveCategory(null)} />
               {categories.map(cat => (
                 <CategoryPill key={cat} active={activeCategory === cat}
                   icon={getCategoryIcon(cat)}
