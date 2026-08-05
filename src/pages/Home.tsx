@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   Tv, Heart, Globe, PlayCircle, Radio, Compass, Music,
   BookOpen, Baby, Star, Mic, ChevronLeft, ChevronRight, Loader2
@@ -34,10 +34,9 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
-  // Dynamic channel data loading using custom hook
+  // Dynamic channel data loading
   const { channels: ALL_CHANNELS = [], isLoading, error } = useChannels();
 
-  // Precompute channel counts per category
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     (ALL_CHANNELS as any[]).forEach(ch => {
@@ -67,7 +66,6 @@ export default function Home() {
     });
   }, [ALL_CHANNELS, searchQuery, activeCategory, showFavoritesOnly, favorites]);
 
-  // Prev / Next channel navigation
   const currentIndex = activeChannel
     ? filteredChannels.findIndex(ch => ch.url === activeChannel.url)
     : -1;
@@ -88,7 +86,6 @@ export default function Home() {
 
   const isAllActive = !showFavoritesOnly && activeCategory === null;
 
-  // Prev/Next bar shown below the player when a channel is active
   const NavBar = () => (
     <div className="flex items-center justify-between gap-2 mt-2">
       <button
@@ -125,7 +122,6 @@ export default function Home() {
     </div>
   );
 
-  // Shared player — rendered ONCE, never duplicated
   const playerEl = activeChannel ? (
     <VideoPlayer key={activeChannel.url} channel={activeChannel} />
   ) : (
@@ -138,6 +134,39 @@ export default function Home() {
           </svg>
         </div>
         <p className="text-white font-semibold text-sm drop-shadow">চ্যানেল সিলেক্ট করুন</p>
+      </div>
+    </div>
+  );
+
+  // Horizontal Category Bar Component
+  const HorizontalCategoryBar = () => (
+    <div
+      className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border overflow-x-auto"
+      style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+    >
+      <div className="flex gap-2 px-3 py-2.5 min-w-max">
+        <CategoryPill
+          active={isAllActive}
+          icon={<Tv className="w-3.5 h-3.5" />}
+          label={`${t("All Channels")} (${ALL_CHANNELS.length})`}
+          onClick={() => { setActiveCategory(null); setShowFavoritesOnly(false); }}
+        />
+        <CategoryPill
+          active={showFavoritesOnly}
+          icon={<Heart className="w-3.5 h-3.5 fill-current" />}
+          label={`${t("Favorites")} (${favorites.length})`}
+          onClick={() => { setActiveCategory(null); setShowFavoritesOnly(true); }}
+          red
+        />
+        {categories.map(cat => (
+          <CategoryPill
+            key={cat}
+            active={!showFavoritesOnly && activeCategory === cat}
+            icon={getCategoryIcon(cat)}
+            label={`${t(cat)} (${categoryCounts[cat] || 0})`}
+            onClick={() => { setActiveCategory(cat); setShowFavoritesOnly(false); }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -163,42 +192,12 @@ export default function Home() {
   if (isMobile) {
     return (
       <div className="flex flex-col">
-        <div id="player-anchor" className="sticky top-[var(--navbar-h)] z-20">
-          <div className="bg-background px-3 pt-3 pb-2 border-b border-border">
+        <div id="player-anchor" className="sticky top-[var(--navbar-h)] z-20 bg-background border-b border-border">
+          <div className="px-3 pt-3 pb-2">
             {playerEl}
             {activeChannel && <NavBar />}
           </div>
-
-          {/* Horizontal category strip */}
-          <div
-            className="bg-sidebar border-b border-sidebar-border overflow-x-auto"
-            style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
-          >
-            <div className="flex gap-2 px-3 py-2 min-w-max">
-              <CategoryPill
-                active={isAllActive}
-                icon={<Tv className="w-3 h-3" />}
-                label={`${t("All Channels")} (${ALL_CHANNELS.length})`}
-                onClick={() => { setActiveCategory(null); setShowFavoritesOnly(false); }}
-              />
-              <CategoryPill
-                active={showFavoritesOnly}
-                icon={<Heart className="w-3 h-3 fill-current" />}
-                label={`${t("Favorites")} (${favorites.length})`}
-                onClick={() => { setActiveCategory(null); setShowFavoritesOnly(true); }}
-                red
-              />
-              {categories.map(cat => (
-                <CategoryPill
-                  key={cat}
-                  active={!showFavoritesOnly && activeCategory === cat}
-                  icon={getCategoryIcon(cat)}
-                  label={`${t(cat)} (${categoryCounts[cat] || 0})`}
-                  onClick={() => { setActiveCategory(cat); setShowFavoritesOnly(false); }}
-                />
-              ))}
-            </div>
-          </div>
+          <HorizontalCategoryBar />
         </div>
 
         <div className="bg-background">
@@ -220,56 +219,43 @@ export default function Home() {
       className="flex overflow-hidden"
       style={{ height: "calc(100dvh - var(--navbar-h))" }}
     >
-      {/* Left panel: player + category list */}
-      <div className="w-[48%] lg:w-[50%] xl:w-[52%] flex flex-col border-r border-border overflow-hidden">
-        <div className="shrink-0 p-4 border-b border-border bg-background">
-          {playerEl}
+      {/* Left panel: Player + Active Info only */}
+      <div className="w-[48%] lg:w-[50%] xl:w-[52%] flex flex-col border-r border-border overflow-y-auto bg-background p-4">
+        {playerEl}
 
-          {activeChannel ? (
-            <>
-              <div className="mt-2.5 flex items-center gap-2.5">
-                {activeChannel.logo && (
-                  <img
-                    src={activeChannel.logo}
-                    alt=""
-                    className="w-7 h-7 object-contain rounded bg-muted/30 p-0.5 shrink-0"
-                    onError={e => (e.currentTarget.style.display = "none")}
-                  />
-                )}
-                <div className="min-w-0">
-                  <p className="font-bold text-sm leading-tight truncate">{activeChannel.name.trim()}</p>
-                  <p className="text-xs text-muted-foreground">{t(activeChannel.category)}</p>
-                </div>
+        {activeChannel && (
+          <div className="mt-3">
+            <div className="flex items-center gap-2.5">
+              {activeChannel.logo && (
+                <img
+                  src={activeChannel.logo}
+                  alt=""
+                  className="w-7 h-7 object-contain rounded bg-muted/30 p-0.5 shrink-0"
+                  onError={e => (e.currentTarget.style.display = "none")}
+                />
+              )}
+              <div className="min-w-0">
+                <p className="font-bold text-sm leading-tight truncate">{activeChannel.name.trim()}</p>
+                <p className="text-xs text-muted-foreground">{t(activeChannel.category)}</p>
               </div>
-              <NavBar />
-            </>
-          ) : null}
-        </div>
-
-        <div className="flex-1 overflow-y-auto bg-sidebar">
-          <CategoryList
-            categories={categories}
-            categoryCounts={categoryCounts}
-            totalCount={ALL_CHANNELS.length}
-            favCount={favorites.length}
-            activeCategory={activeCategory}
-            setActiveCategory={setActiveCategory}
-            showFavoritesOnly={showFavoritesOnly}
-            setShowFavoritesOnly={setShowFavoritesOnly}
-            isAllActive={isAllActive}
-          />
-        </div>
+            </div>
+            <NavBar />
+          </div>
+        )}
       </div>
 
-      {/* Right panel: channels */}
-      <div className="flex-1 overflow-y-auto bg-background">
-        <ChannelGrid
-          channels={filteredChannels}
-          activeChannelName={activeChannel?.name || null}
-          onSelect={handleSelect}
-          favorites={favorites}
-          toggleFavorite={toggleFavorite}
-        />
+      {/* Right panel: Horizontal Category Bar + Channel Grid */}
+      <div className="flex-1 overflow-y-auto bg-background flex flex-col">
+        <HorizontalCategoryBar />
+        <div className="flex-1">
+          <ChannelGrid
+            channels={filteredChannels}
+            activeChannelName={activeChannel?.name || null}
+            onSelect={handleSelect}
+            favorites={favorites}
+            toggleFavorite={toggleFavorite}
+          />
+        </div>
       </div>
     </div>
   );
@@ -281,12 +267,26 @@ function CategoryPill({ active, icon, label, onClick, red }: {
   active: boolean; icon: React.ReactNode; label: string;
   onClick: () => void; red?: boolean;
 }) {
+  const pillRef = useRef<HTMLButtonElement>(null);
+
+  // Auto-scroll selected button to center
+  useEffect(() => {
+    if (active && pillRef.current) {
+      pillRef.current.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+  }, [active]);
+
   return (
     <button
+      ref={pillRef}
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-all border
+      className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition-all border
         ${active
-          ? "bg-primary text-primary-foreground border-primary shadow-sm"
+          ? "bg-primary text-primary-foreground border-primary shadow-sm scale-105"
           : red
             ? "bg-muted/60 text-red-500 border-transparent hover:border-red-400/40"
             : "bg-muted/60 text-muted-foreground border-transparent hover:border-primary/30 hover:text-foreground"
@@ -296,67 +296,4 @@ function CategoryPill({ active, icon, label, onClick, red }: {
       {label}
     </button>
   );
-}
-
-function CategoryList({ categories, categoryCounts, totalCount, favCount, activeCategory, setActiveCategory,
-  showFavoritesOnly, setShowFavoritesOnly, isAllActive }: {
-  categories: string[];
-  categoryCounts: Record<string, number>;
-  totalCount: number;
-  favCount: number;
-  activeCategory: string | null;
-  setActiveCategory: (c: string | null) => void;
-  showFavoritesOnly: boolean;
-  setShowFavoritesOnly: (v: boolean) => void;
-  isAllActive: boolean;
-}) {
-  const { t } = useLanguage();
-  const btnBase = "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all text-left";
-  const activeStyle = "bg-primary/15 text-primary";
-  const inactiveStyle = "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground";
-
-  const Count = ({ n }: { n: number }) => (
-    <span className="ml-auto text-[10px] font-bold bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground shrink-0">
-      {n}
-    </span>
-  );
-
-  return (
-    <div className="p-2">
-      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 py-2">
-        {t("Category")}
-      </p>
-
-      <button onClick={() => { setActiveCategory(null); setShowFavoritesOnly(false); }}
-        className={`${btnBase} ${isAllActive ? activeStyle : inactiveStyle}`}>
-        <Tv className="w-4 h-4 shrink-0" />
-        {t("All Channels")}
-        <Count n={totalCount} />
-      </button>
-
-      <button onClick={() => { setActiveCategory(null); setShowFavoritesOnly(true); }}
-        className={`${btnBase} ${showFavoritesOnly ? "bg-red-500/15 text-red-500" : "text-red-500/70 hover:bg-red-500/10 hover:text-red-500"}`}>
-        <Heart className="w-4 h-4 shrink-0 fill-current" />
-        {t("Favorites")}
-        <Count n={favCount} />
-      </button>
-
-      <div className="h-px bg-border my-2 mx-1" />
-
-      {categories.map(cat => {
-        const active = !showFavoritesOnly && activeCategory === cat;
-        return (
-          <button key={cat} onClick={() => { setActiveCategory(cat); setShowFavoritesOnly(false); }}
-            className={`${btnBase} ${active ? activeStyle : inactiveStyle}`}>
-            <span className={active ? "text-primary" : "text-sidebar-foreground/50"}>
-              {getCategoryIcon(cat)}
-            </span>
-            {t(cat)}
-            <Count n={categoryCounts[cat] || 0} />
-          </button>
-        );
-      })}
-    </div>
-  );
-            }
-                    
+        }
