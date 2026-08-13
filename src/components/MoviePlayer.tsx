@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Maximize, WifiOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface MoviePlayerProps {
