@@ -31,6 +31,7 @@ function restorePlayback(url: string, video: HTMLVideoElement) {
 // ──────────────────────────────────────────────────────────────────────────
 
 export function MoviePlayer({ movie }: MoviePlayerProps) {
+  const { t, language } = useLanguage();
   const videoRef      = useRef<HTMLVideoElement>(null);
   const containerRef  = useRef<HTMLDivElement>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -152,6 +153,11 @@ video.load();
     }
   };
 
+  const errorTitle = language === "bn" ? "মুভি লিংক কাজ করছে না" : "Movie Link Not Working";
+  const errorSub = language === "bn" ? "এই মুহূর্তে স্ট্রিম পাওয়া যাচ্ছে না" : "Stream unavailable right now";
+  const retryLabel = language === "bn" ? "আবার চেষ্টা করুন" : "Try Again";
+  
+
   return (
     <div
       ref={containerRef}
@@ -175,7 +181,7 @@ video.load();
             className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm z-10 gap-3 pointer-events-none"
           >
             <Loader2 className="w-10 h-10 text-primary animate-spin" />
-            <p className="text-white/70 text-xs tracking-wide">লোড হচ্ছে...</p>
+            <p className="text-white/70 text-xs tracking-wide">{language === "bn" ? "লোড হচ্ছে..." : "Loading stream..."}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -193,12 +199,12 @@ video.load();
               <WifiOff className="w-7 h-7 text-destructive" />
             </div>
             <div>
-              <p className="text-white font-bold text-base">মুভি চালানো সম্ভব হয়নি</p>
-              <p className="text-white/50 text-xs mt-1">স্ট্রিম অফলাইন বা অনুপলব্ধ হতে পারে</p>
+              <p className="text-white font-bold text-base">{errorTitle}</p>
+              <p className="text-white/50 text-xs mt-1">{errorSub}</p>
             </div>
             <Button onClick={handleRetry} size="sm" className="mt-1 gap-2">
               <Loader2 className="w-3.5 h-3.5" />
-              আবার চেষ্টা করুন
+            {retryLabel}
             </Button>
           </motion.div>
         )}
