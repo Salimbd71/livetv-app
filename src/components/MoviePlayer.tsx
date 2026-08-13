@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Maximize, WifiOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface MoviePlayerProps {
   movie: {
@@ -13,8 +14,6 @@ interface MoviePlayerProps {
 }
 
 // ── Module-level playback state cache ─────────────────────────────────────
-// Survives component unmount/remount (layout switches, orientation changes).
-// Keyed by movie URL so we restore the right position.
 const _playbackCache: Record<string, { time: number; paused: boolean }> = {};
 
 function savePlayback(url: string, video: HTMLVideoElement) {
@@ -24,16 +23,16 @@ function savePlayback(url: string, video: HTMLVideoElement) {
 
 function restorePlayback(url: string, video: HTMLVideoElement) {
   const saved = _playbackCache[url];
-  if (!saved || saved.time < 0.5) return; // don't bother for < 0.5s
+  if (!saved || saved.time < 0.5) return;
   video.currentTime = saved.time;
 }
 // ──────────────────────────────────────────────────────────────────────────
 
 export function MoviePlayer({ movie }: MoviePlayerProps) {
+  const { t } = useLanguage();
   const videoRef      = useRef<HTMLVideoElement>(null);
   const containerRef  = useRef<HTMLDivElement>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Track which URL we initialised so we can skip duplicate inits
   const initUrlRef    = useRef<string>("");
   const retryKeyRef   = useRef<number>(0);
 
@@ -48,18 +47,15 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     const url = movie.url;
 
     // ── Skip re-init when layout flips (same URL, no retry) ──────────────
-    // If the video element already has our src loaded and is playing/paused
-    // normally (no error), just let it continue — don't restart.
     const isRetry = retryKey !== retryKeyRef.current;
     retryKeyRef.current = retryKey;
 
     if (
       !isRetry &&
       initUrlRef.current === url &&
-      video.readyState >= 2 &&   // HAVE_CURRENT_DATA or better
+      video.readyState >= 2 &&
       !video.error
     ) {
-      // Already loaded & playing the correct URL — nothing to do.
       setIsLoading(false);
       setError(false);
       return;
@@ -71,23 +67,17 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
     setIsLoading(true);
     initUrlRef.current = url;
 
-    // Stop previous playback cleanly (without wiping the DOM element)
     try {
       video.pause();
     } catch (_) {}
 
-    // ❌ পুরনো লাইন: video.src = url;
-
-// ✅ নতুন প্রক্সি লাইন:
-const proxyUrl = `/api/stream?url=${encodeURIComponent(url)}`;
-video.src = proxyUrl;
-
-video.load();
-    
+    // 🔹 Vercel API Proxy URL (SSL & User-Agent Bypass)
+    const proxyUrl = `/api/stream?url=${encodeURIComponent(url)}`;
+    video.src = proxyUrl;
+    video.load();
 
     const onCanPlay = () => {
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-      // Restore saved position (if the user had watched part of this movie)
       restorePlayback(url, video);
       setIsLoading(false);
       setError(false);
@@ -103,7 +93,7 @@ video.load();
     const onWaiting  = () => setIsLoading(true);
     const onPlaying  = () => setIsLoading(false);
 
-    // 12-second timeout before showing error
+    // 12-second timeout
     errorTimerRef.current = setTimeout(() => {
       setIsLoading(false);
       setError(true);
@@ -121,14 +111,8 @@ video.load();
       video.removeEventListener("waiting",  onWaiting);
       video.removeEventListener("playing",  onPlaying);
 
-      // ── Save playback position before unmount ─────────────────────────
-      // This preserves the position across layout switches (orientation,
-      // desktop ↔ mobile) so the video resumes from the same point.
       savePlayback(url, video);
 
-      // Pause gently — do NOT remove src or call load().
-      // Removing src forces a full reload; we avoid that so that if the same
-      // component remounts quickly the browser may reuse the buffered data.
       try { video.pause(); } catch (_) {}
     };
   }, [movie.url, retryKey]);
@@ -136,7 +120,6 @@ video.load();
   const handleRetry = () => {
     setError(false);
     setIsLoading(true);
-    // Clear cached state so retry starts fresh
     delete _playbackCache[movie.url];
     initUrlRef.current = "";
     setRetryKey(k => k + 1);
@@ -174,7 +157,7 @@ video.load();
             className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm z-10 gap-3 pointer-events-none"
           >
             <Loader2 className="w-10 h-10 text-primary animate-spin" />
-            <p className="text-white/70 text-xs tracking-wide">লোড হচ্ছে...</p>
+            <p className="text-white/70 text-xs tracking-wide">{t("Loading...")}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -192,12 +175,12 @@ video.load();
               <WifiOff className="w-7 h-7 text-destructive" />
             </div>
             <div>
-              <p className="text-white font-bold text-base">মুভি চালানো সম্ভব হয়নি</p>
-              <p className="text-white/50 text-xs mt-1">স্ট্রিম অফলাইন বা অনুপলব্ধ হতে পারে</p>
+              <p className="text-white font-bold text-base">{t("Unable to play video")}</p>
+              <p className="text-white/50 text-xs mt-1">{t("Stream may be offline or unavailable")}</p>
             </div>
             <Button onClick={handleRetry} size="sm" className="mt-1 gap-2">
               <Loader2 className="w-3.5 h-3.5" />
-              আবার চেষ্টা করুন
+              {t("Try Again")}
             </Button>
           </motion.div>
         )}
@@ -233,4 +216,4 @@ video.load();
       </div>
     </div>
   );
-}
+                   }
