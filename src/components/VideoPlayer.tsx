@@ -96,7 +96,13 @@ export function VideoPlayer({ channel }: VideoPlayerProps) {
       });
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       // Safari native HLS
-      video.src = channel.url;
+     // video.src = channel.url;
+
+      // ❌ পুরনো লাইন: video.src = url;
+
+// ✅ নতুন প্রক্সি লাইন:
+const proxyUrl = `/api/stream?url=${encodeURIComponent(url)}`;
+video.src = proxyUrl;
 
       const onLoaded = () => {
         clearTimer();
