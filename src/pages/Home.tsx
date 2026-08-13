@@ -133,7 +133,7 @@ export default function Home() {
             <path d="M8 5v14l11-7z" />
           </svg>
         </div>
-        <p className="text-white font-semibold text-sm drop-shadow">চ্যানেল সিলেক্ট করুন</p>
+        <p className="text-white font-semibold text-sm drop-shadow">Select a Channel</p>
       </div>
     </div>
   );
