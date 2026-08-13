@@ -76,8 +76,14 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       video.pause();
     } catch (_) {}
 
-    video.src = url;
-    video.load();
+    // ❌ পুরনো লাইন: video.src = url;
+
+// ✅ নতুন প্রক্সি লাইন:
+const proxyUrl = `/api/stream?url=${encodeURIComponent(url)}`;
+video.src = proxyUrl;
+
+video.load();
+    
 
     const onCanPlay = () => {
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
