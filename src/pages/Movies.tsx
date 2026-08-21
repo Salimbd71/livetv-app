@@ -3,8 +3,6 @@ import {
   Film, Clapperboard, Globe2, Sparkles, Star, WifiOff, RefreshCw,
   Loader2, ChevronLeft, ChevronRight, Play
 } from "lucide-react";
-import { VideoPlayer } from "@/components/VideoPlayer";
-// import { MoviePlayer } from "@/components/MoviePlayer";
 import { useMovies, type Movie } from "@/hooks/use-movies";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useGlobal } from "@/contexts/GlobalContext";
