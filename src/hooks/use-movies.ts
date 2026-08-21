@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 const MOVIES_M3U8_URL =
-  "https://raw.githubusercontent.com/ahan443/FAST-IPTV/refs/heads/main/z.m3u";
+  "https://raw.githubusercontent.com/ahan443/FAST-IPTV/refs/heads/main/movies.m3u8";
 
 export interface Movie {
   name: string;
