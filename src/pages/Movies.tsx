@@ -9,6 +9,9 @@ import { useGlobal } from "@/contexts/GlobalContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 
+// ── আপনার আগের VideoPlayer কম্পোনেন্টটি ইমপোর্ট করুন ──
+import { VideoPlayer } from "@/components/VideoPlayer"; // 경로 (path) টি আপনার প্রজেক্ট অনুযায়ী চেক করে নিন
+
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   "Hindi Movies":             <Film className="w-3.5 h-3.5" />,
   "4K Hindi Movies":          <Sparkles className="w-3.5 h-3.5" />,
@@ -65,7 +68,7 @@ function MovieCard({ movie, active, onClick }: { movie: Movie; active: boolean; 
           </div>
         </div>
         {active && (
-          <div className="absolute top-2 left-2 flex items-center gap-1 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded">
+          <div className="absolute top-2 left-2 flex items-center gap-1 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block" />
             {t("PLAYING") || "PLAYING"}
           </div>
@@ -81,7 +84,7 @@ function MovieCard({ movie, active, onClick }: { movie: Movie; active: boolean; 
   );
 }
 
-// ── CategoryPill (shared) ─────────────────────────────────────────────────
+// ── CategoryPill ──────────────────────────────────────────────────────────
 function CategoryPill({ active, icon, label, onClick, pillRef }: {
   active: boolean; icon: React.ReactNode; label: string;
   onClick: () => void; pillRef?: (el: HTMLButtonElement | null) => void;
@@ -101,7 +104,7 @@ function CategoryPill({ active, icon, label, onClick, pillRef }: {
   );
 }
 
-// ── Desktop horizontal category strip with auto-center ────────────────────
+// ── Desktop horizontal category strip ─────────────────────────────────────
 function DesktopCategoryStrip({
   categories, categoryCounts, totalMovies, activeCategory, setActiveCategory,
 }: {
@@ -282,7 +285,12 @@ export default function Movies() {
       <div className="flex flex-col">
         <div ref={playerRef} className="sticky top-[var(--navbar-h)] z-20">
           <div className="bg-background px-3 pt-3 pb-2 border-b border-border">
-            {activeMovie ? <MoviePlayer key={activeMovie.url} movie={activeMovie} /> : <HeroPlaceholder />}
+            {activeMovie ? (
+              /* ✅ VideoPlayer ব্যবহার করা হয়েছে */
+              <VideoPlayer key={activeMovie.url} channel={activeMovie} />
+            ) : (
+              <HeroPlaceholder />
+            )}
             {activeMovie && (
               <>
                 <div className="mt-2 px-0.5">
@@ -323,7 +331,8 @@ export default function Movies() {
           <AnimatePresence mode="wait">
             {activeMovie ? (
               <motion.div key="player" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <MoviePlayer movie={activeMovie} />
+                {/* ✅ VideoPlayer ব্যবহার করা হয়েছে */}
+                <VideoPlayer key={activeMovie.url} channel={activeMovie} />
                 <div className="mt-2.5 flex items-center gap-2.5">
                   {activeMovie.logo && (
                     <img src={activeMovie.logo} alt=""
@@ -376,5 +385,5 @@ export default function Movies() {
       </div>
     </div>
   );
-    }
-                  
+        }
+                                         
