@@ -3,14 +3,12 @@ import {
   Film, Clapperboard, Globe2, Sparkles, Star, WifiOff, RefreshCw,
   Loader2, ChevronLeft, ChevronRight, Play
 } from "lucide-react";
+import { MoviePlayer } from "@/components/MoviePlayer";
 import { useMovies, type Movie } from "@/hooks/use-movies";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useGlobal } from "@/contexts/GlobalContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
-
-// ── আপনার আগের VideoPlayer কম্পোনেন্টটি ইমপোর্ট করুন ──
-import { VideoPlayer } from "@/components/VideoPlayer"; // 경로 (path) টি আপনার প্রজেক্ট অনুযায়ী চেক করে নিন
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   "Hindi Movies":             <Film className="w-3.5 h-3.5" />,
@@ -39,7 +37,6 @@ function SkeletonCard() {
 function MovieCard({ movie, active, onClick }: { movie: Movie; active: boolean; onClick: () => void }) {
   const [imgErr, setImgErr] = useState(false);
   const { t } = useLanguage();
-
   return (
     <motion.button
       initial={{ opacity: 0, y: 12 }}
@@ -68,9 +65,9 @@ function MovieCard({ movie, active, onClick }: { movie: Movie; active: boolean; 
           </div>
         </div>
         {active && (
-          <div className="absolute top-2 left-2 flex items-center gap-1 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
+          <div className="absolute top-2 left-2 flex items-center gap-1 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded">
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block" />
-            {t("PLAYING") || "PLAYING"}
+            PLAYING
           </div>
         )}
       </div>
@@ -84,7 +81,7 @@ function MovieCard({ movie, active, onClick }: { movie: Movie; active: boolean; 
   );
 }
 
-// ── CategoryPill ──────────────────────────────────────────────────────────
+// ── CategoryPill (shared) ─────────────────────────────────────────────────
 function CategoryPill({ active, icon, label, onClick, pillRef }: {
   active: boolean; icon: React.ReactNode; label: string;
   onClick: () => void; pillRef?: (el: HTMLButtonElement | null) => void;
@@ -104,7 +101,7 @@ function CategoryPill({ active, icon, label, onClick, pillRef }: {
   );
 }
 
-// ── Desktop horizontal category strip ─────────────────────────────────────
+// ── Desktop horizontal category strip with auto-center ────────────────────
 function DesktopCategoryStrip({
   categories, categoryCounts, totalMovies, activeCategory, setActiveCategory,
 }: {
@@ -122,6 +119,7 @@ function DesktopCategoryStrip({
     const strip = stripRef.current;
     const pill = pillRefs.current.get(key);
     if (!strip || !pill) return;
+    // getBoundingClientRect so calculation is independent of offsetParent
     const stripRect = strip.getBoundingClientRect();
     const pillRect = pill.getBoundingClientRect();
     strip.scrollLeft += (pillRect.left - stripRect.left) + pillRect.width / 2 - strip.offsetWidth / 2;
@@ -182,6 +180,7 @@ export default function Movies() {
     [movies]
   );
 
+  // Clear category filter when global search is active
   useEffect(() => {
     if (searchQuery) setActiveCategory(null);
   }, [searchQuery]);
@@ -209,7 +208,7 @@ export default function Movies() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-6">
         <WifiOff className="w-14 h-14 text-destructive/60" />
-        <p className="font-bold text-lg">{t("Failed to load movies")}</p>
+        <p className="font-bold text-lg">{t("Could not load movies")}</p>
         <p className="text-sm text-muted-foreground">{error}</p>
         <button onClick={retry}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors">
@@ -227,8 +226,8 @@ export default function Movies() {
         <div className="w-16 h-16 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center mb-1">
           <Clapperboard className="w-8 h-8 text-primary" />
         </div>
-        <p className="text-white font-bold text-base">{t("Select a Movie")}</p>
-        <p className="text-white/40 text-xs max-w-[200px]">{t("Click on any movie from the list below")}</p>
+        <p className="text-white font-bold text-base">{t("Select a movie")}</p>
+        <p className="text-white/40 text-xs max-w-[200px]">{t("Choose a movie below to start watching")}</p>
       </div>
     </div>
   );
@@ -239,7 +238,7 @@ export default function Movies() {
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all
           ${canPrev ? "border-border text-foreground hover:bg-muted hover:border-primary/40 active:scale-95"
                     : "border-border/40 text-muted-foreground/30 cursor-not-allowed"}`}>
-        <ChevronLeft className="w-3.5 h-3.5" /> {t("Previous")}
+        <ChevronLeft className="w-3.5 h-3.5" /> Prev
       </button>
       {activeMovie && (
         <span className="text-[10px] text-muted-foreground truncate max-w-[160px] text-center hidden sm:block">
@@ -250,7 +249,7 @@ export default function Movies() {
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all
           ${canNext ? "border-border text-foreground hover:bg-muted hover:border-primary/40 active:scale-95"
                     : "border-border/40 text-muted-foreground/30 cursor-not-allowed"}`}>
-        {t("Next")} <ChevronRight className="w-3.5 h-3.5" />
+        Next <ChevronRight className="w-3.5 h-3.5" />
       </button>
     </div>
   );
@@ -285,12 +284,7 @@ export default function Movies() {
       <div className="flex flex-col">
         <div ref={playerRef} className="sticky top-[var(--navbar-h)] z-20">
           <div className="bg-background px-3 pt-3 pb-2 border-b border-border">
-            {activeMovie ? (
-              /* ✅ VideoPlayer ব্যবহার করা হয়েছে */
-              <VideoPlayer key={activeMovie.url} channel={activeMovie} />
-            ) : (
-              <HeroPlaceholder />
-            )}
+            {activeMovie ? <MoviePlayer key={activeMovie.url} movie={activeMovie} /> : <HeroPlaceholder />}
             {activeMovie && (
               <>
                 <div className="mt-2 px-0.5">
@@ -331,8 +325,7 @@ export default function Movies() {
           <AnimatePresence mode="wait">
             {activeMovie ? (
               <motion.div key="player" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                {/* ✅ VideoPlayer ব্যবহার করা হয়েছে */}
-                <VideoPlayer key={activeMovie.url} channel={activeMovie} />
+                <MoviePlayer movie={activeMovie} />
                 <div className="mt-2.5 flex items-center gap-2.5">
                   {activeMovie.logo && (
                     <img src={activeMovie.logo} alt=""
@@ -350,9 +343,9 @@ export default function Movies() {
               <motion.div key="placeholder" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <HeroPlaceholder />
                 <div className="mt-3 text-center">
-                  <p className="text-sm font-semibold text-foreground">NetPlay IPTV Movies</p>
+                  <p className="text-sm font-semibold text-foreground">NetPlay IPTV {t("movies")}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {loading ? t("Loading movies...") : `${movies.length}+ ${t("Movies Streaming")}`}
+                    {loading ? t("Loading movies...") : `${movies.length}+ ${t("Movie streaming")}`}
                   </p>
                 </div>
               </motion.div>
@@ -364,6 +357,7 @@ export default function Movies() {
       {/* Right panel: sticky category strip + movie grid */}
       <div className="flex-1 flex flex-col overflow-hidden bg-background">
 
+        {/* Horizontal category strip — sticky at top of right panel */}
         <DesktopCategoryStrip
           categories={categories}
           categoryCounts={categoryCounts}
@@ -372,6 +366,7 @@ export default function Movies() {
           setActiveCategory={setActiveCategory}
         />
 
+        {/* Scrollable movie grid */}
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
@@ -385,5 +380,4 @@ export default function Movies() {
       </div>
     </div>
   );
-        }
-                                         
+}
