@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Maximize, WifiOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MoviePlayerProps {
   movie: {
@@ -31,7 +31,7 @@ function restorePlayback(url: string, video: HTMLVideoElement) {
 // ──────────────────────────────────────────────────────────────────────────
 
 export function MoviePlayer({ movie }: MoviePlayerProps) {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const videoRef      = useRef<HTMLVideoElement>(null);
   const containerRef  = useRef<HTMLDivElement>(null);
   const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -78,14 +78,8 @@ export function MoviePlayer({ movie }: MoviePlayerProps) {
       video.pause();
     } catch (_) {}
 
-    // ❌ পুরনো লাইন: video.src = url;
-
-// ✅ নতুন প্রক্সি লাইন:
-const proxyUrl = `/api/stream?url=${encodeURIComponent(url)}`;
-video.src = proxyUrl;
-
-video.load();
-    
+    video.src = url;
+    video.load();
 
     const onCanPlay = () => {
       if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
@@ -153,11 +147,6 @@ video.load();
     }
   };
 
-  const errorTitle = language === "bn" ? "মুভি লিংক কাজ করছে না" : "Movie Link Not Working";
-  const errorSub = language === "bn" ? "এই মুহূর্তে স্ট্রিম পাওয়া যাচ্ছে না" : "Stream unavailable right now";
-  const retryLabel = language === "bn" ? "আবার চেষ্টা করুন" : "Try Again";
-  
-
   return (
     <div
       ref={containerRef}
@@ -181,7 +170,7 @@ video.load();
             className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm z-10 gap-3 pointer-events-none"
           >
             <Loader2 className="w-10 h-10 text-primary animate-spin" />
-            <p className="text-white/70 text-xs tracking-wide">{language === "bn" ? "লোড হচ্ছে..." : "Loading stream..."}</p>
+            <p className="text-white/70 text-xs tracking-wide">{t("Loading...")}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -199,12 +188,12 @@ video.load();
               <WifiOff className="w-7 h-7 text-destructive" />
             </div>
             <div>
-              <p className="text-white font-bold text-base">{errorTitle}</p>
-              <p className="text-white/50 text-xs mt-1">{errorSub}</p>
+              <p className="text-white font-bold text-base">{t("Movie could not be played")}</p>
+              <p className="text-white/50 text-xs mt-1">{t("The movie stream may be offline or unavailable")}</p>
             </div>
             <Button onClick={handleRetry} size="sm" className="mt-1 gap-2">
               <Loader2 className="w-3.5 h-3.5" />
-            {retryLabel}
+              {t("Try Again")}
             </Button>
           </motion.div>
         )}
@@ -225,7 +214,7 @@ video.load();
           )}
           <div>
             <h2 className="text-white font-bold text-sm leading-tight">{movie.name}</h2>
-            <span className="text-white/60 text-xs">{movie.category}</span>
+           <span className="text-white/60 text-xs">{t(movie.category)}</span>
           </div>
         </div>
         <Button
